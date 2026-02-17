@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 export const Header: React.FC = () => {
   return (
@@ -30,14 +31,12 @@ export const Header: React.FC = () => {
 
           {/* Навигация */}
           <nav className="flex items-center gap-4">
-            <a
-              href="https://github.com/izelenov7/dig-web"
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link
+              to="/docs"
               className="text-sm text-slate-600 hover:text-slate-900 transition-colors"
             >
               Документация
-            </a>
+            </Link>
             <a
               href="https://github.com/izelenov7/dig-web"
               target="_blank"
