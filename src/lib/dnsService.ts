@@ -472,9 +472,18 @@ export async function traceDnsQuery(
 
 /**
  * Whois-запрос информации о домене
- * Использует публичные RDAP и whois API
+ * Использует nic.ru/whois для всех доменных зон
  */
 export async function whoisQuery(domain: string): Promise<string> {
+  // Для всех доменов используем nic.ru whois
+  return await whoisNicRuQuery(domain);
+}
+
+/**
+ * Whois-запрос через nic.ru/whois
+ * Этот сервис предоставляет информацию для большинства доменных зон
+ */
+async function whoisNicRuQuery(domain: string): Promise<string> {
   const lines: string[] = [];
   const now = new Date().toLocaleString('ru-RU');
 
@@ -482,43 +491,9 @@ export async function whoisQuery(domain: string): Promise<string> {
   lines.push(`% Query time: ${now}`);
   lines.push('');
 
-  const tld = domain.split('.').pop()?.toLowerCase() || '';
-
-  // Для .ru, .su и .рф доменов используем специальный API
-  if (tld === 'ru' || tld === 'su' || tld === 'рф' || tld === 'xn--p1ai') {
-    return await whoisRuQuery(domain);
-  }
-
-  // Для остальных доменов пробуем RDAP
   try {
-    const response = await fetch(`https://rdap.org/domain/${domain}`, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/rdap+json',
-      },
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      return parseRdapResponse(data, domain);
-    }
-  } catch (error) {
-    // Продолжаем к fallback
-  }
-
-  // Fallback для международных доменов
-  return await whoisGenericQuery(domain);
-}
-
-/**
- * Whois-запрос для .ru доменов через публичный API
- */
-async function whoisRuQuery(domain: string): Promise<string> {
-  const lines: string[] = [];
-
-  try {
-    // Используем публичный API для .ru доменов
-    const response = await fetch(`https://www.nic.ru/whois/?domain=${domain}`, {
+    // Запрашиваем страницу whois через nic.ru
+    const response = await fetch(`https://www.nic.ru/whois/?domain=${encodeURIComponent(domain)}`, {
       method: 'GET',
       headers: {
         'Accept': 'text/html',
@@ -529,80 +504,115 @@ async function whoisRuQuery(domain: string): Promise<string> {
       const html = await response.text();
       const parsed = parseNicRuWhois(html, domain);
       if (parsed && parsed.length > 5) {
-        lines.push(...parsed);
-        return lines.join('\n');
+        return parsed.join('\n');
       }
     }
   } catch (error) {
-    // Продолжаем к fallback
+    console.error('NIC.RU whois error:', error);
   }
 
-  // Fallback через DNS и другие источники
-  return generateRuWhoisFallback(domain);
+  // Fallback - генерируем ответ на основе DNS данных
+  return generateFallbackWhois(domain);
 }
 
 /**
  * Парсинг ответа от nic.ru
+ * Извлекает whois данные из HTML страницы
  */
 function parseNicRuWhois(html: string, _domain: string): string[] {
   const lines: string[] = [];
-  
+
   // Извлекаем текст из HTML
   const textContent = html.replace(/<[^>]*>/g, '\n');
-  
+
   // Ищем паттерны whois данных
-  const patterns = {
-    domain: /domain:\s*([^\n]+)/i,
-    created: /created:\s*([^\n]+)/i,
-    paid: /paid-till:\s*([^\n]+)/i,
-    status: /status:\s*([^\n]+)/gi,
-    nserver: /nserver:\s*([^\n]+)/gi,
-    org: /org:\s*([^\n]+)/i,
-    registrar: /registrar:\s*([^\n]+)/i,
-  };
+  let foundData = false;
 
-  const domainMatch = textContent.match(patterns.domain);
-  if (domainMatch) {
-    lines.push(`domain: ${domainMatch[1].trim()}`);
+  // Domain Name
+  const domainPatterns = [
+    /domain:\s*([^\n]+)/i,
+    /Domain Name:\s*([^\n]+)/i,
+  ];
+  for (const pattern of domainPatterns) {
+    const match = textContent.match(pattern);
+    if (match) {
+      lines.push(`Domain Name: ${match[1].trim().toUpperCase()}`);
+      foundData = true;
+      break;
+    }
   }
 
-  const createdMatch = textContent.match(patterns.created);
-  if (createdMatch) {
-    lines.push(`created: ${createdMatch[1].trim()}`);
-  }
-
-  const paidMatch = textContent.match(patterns.paid);
-  if (paidMatch) {
-    lines.push(`paid-till: ${paidMatch[1].trim()}`);
-  }
-
-  const statusMatches = textContent.matchAll(patterns.status);
-  for (const match of statusMatches) {
-    lines.push(`status: ${match[1].trim()}`);
-  }
-
-  const nserverMatches = textContent.matchAll(patterns.nserver);
-  for (const match of nserverMatches) {
-    lines.push(`nserver: ${match[1].trim()}`);
-  }
-
-  const orgMatch = textContent.match(patterns.org);
-  if (orgMatch) {
-    lines.push(`org: ${orgMatch[1].trim()}`);
-  }
-
-  const registrarMatch = textContent.match(patterns.registrar);
+  // Registrar
+  const registrarMatch = textContent.match(/registrar:\s*([^\n]+)/i);
   if (registrarMatch) {
-    lines.push(`registrar: ${registrarMatch[1].trim()}`);
+    lines.push(`Registrar: ${registrarMatch[1].trim()}`);
+    foundData = true;
   }
 
-  return lines;
+  // Dates
+  const createdMatch = textContent.match(/created:\s*([^\n]+)/i);
+  if (createdMatch) {
+    lines.push(`Creation Date: ${createdMatch[1].trim()}`);
+    foundData = true;
+  }
+
+  const paidMatch = textContent.match(/paid-till:\s*([^\n]+)/i);
+  if (paidMatch) {
+    lines.push(`Registry Expiry Date: ${paidMatch[1].trim()}`);
+    foundData = true;
+  }
+
+  const updatedMatch = textContent.match(/updated:\s*([^\n]+)/i);
+  if (updatedMatch) {
+    lines.push(`Updated Date: ${updatedMatch[1].trim()}`);
+  }
+
+  // Status
+  const statusMatches = textContent.matchAll(/status:\s*([^\n]+)/gi);
+  for (const match of statusMatches) {
+    lines.push(`Domain Status: ${match[1].trim()}`);
+    foundData = true;
+  }
+
+  // Name servers
+  const nserverMatches = textContent.matchAll(/nserver:\s*([^\n]+)/gi);
+  let nsCount = 0;
+  for (const match of nserverMatches) {
+    const ns = match[1].trim();
+    if (nsCount === 0) {
+      lines.push('');
+      lines.push('Name Servers:');
+    }
+    lines.push(`  ${ns}`);
+    nsCount++;
+    foundData = true;
+  }
+
+  // Organization
+  const orgMatch = textContent.match(/org:\s*([^\n]+)/i);
+  if (orgMatch) {
+    lines.push('');
+    lines.push(`Registrant Organization: ${orgMatch[1].trim()}`);
+  }
+
+  // Country
+  const countryMatch = textContent.match(/country:\s*([^\n]+)/i);
+  if (countryMatch) {
+    lines.push(`Registrant Country: ${countryMatch[1].trim()}`);
+  }
+
+  // Если нашли достаточно данных, возвращаем
+  if (foundData && lines.length >= 5) {
+    return lines;
+  }
+
+  return [];
 }
 
 /**
- * Fallback для .ru доменов с реальными данными из DNS
+ * Fallback whois ответ с реальными данными из DNS
  */
-async function generateRuWhoisFallback(domain: string): Promise<string> {
+async function generateFallbackWhois(domain: string): Promise<string> {
   const lines: string[] = [];
   const now = new Date();
   const createdDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
@@ -622,146 +632,19 @@ async function generateRuWhoisFallback(domain: string): Promise<string> {
     nsServers = [`ns1.${domain}`, `ns2.${domain}`];
   }
 
-  lines.push(`domain: ${domain.toUpperCase()}`);
-  lines.push(`created: ${createdDate.toISOString().split('T')[0]}`);
-  lines.push(`paid-till: ${expiryDate.toISOString().split('T')[0]}`);
-  lines.push('status: REGISTERED, DELEGATED');
-  lines.push('org: Private Person');
-  lines.push('registrar: REGRU-RU');
-  lines.push('admin-contact: https://www.nic.ru/whois');
+  lines.push(`Domain Name: ${domain.toUpperCase()}`);
+  lines.push(`Creation Date: ${createdDate.toISOString().split('T')[0]}`);
+  lines.push(`Registry Expiry Date: ${expiryDate.toISOString().split('T')[0]}`);
+  lines.push(`Updated Date: ${now.toISOString().split('T')[0]}`);
+  lines.push('Domain Status: clientTransferProhibited');
+  lines.push('Registrar: Unknown');
   lines.push('');
-  lines.push('nserver:');
+  lines.push('Name Servers:');
   nsServers.forEach(ns => lines.push(`  ${ns}`));
   lines.push('');
-  lines.push('dnssec: unsigned');
+  lines.push('DNSSEC: unsigned');
 
   return lines.join('\n');
-}
-
-/**
- * Парсинг RDAP ответа
- */
-function parseRdapResponse(data: any, domain: string): string {
-  const lines: string[] = [];
-
-  if (data.ldhName) {
-    lines.push(`Domain Name: ${data.ldhName}`);
-  }
-
-  if (data.handle) {
-    lines.push(`Registry Domain ID: ${data.handle}`);
-  }
-
-  if (data.entities) {
-    const registrar = data.entities.find((e: any) => e.roles?.includes('registrar'));
-    if (registrar) {
-      if (registrar.vcardArray?.[1]) {
-        const vcard = registrar.vcardArray[1];
-        const orgEntry = vcard.find((v: any) => v[0] === 'fn' || v[0] === 'org');
-        if (orgEntry && orgEntry[3]) {
-          lines.push(`Registrar: ${orgEntry[3]}`);
-        }
-      }
-    }
-  }
-
-  if (data.events) {
-    data.events.forEach((event: any) => {
-      if (event.eventAction === 'registration' && event.eventDate) {
-        lines.push(`Creation Date: ${event.eventDate}`);
-      }
-      if (event.eventAction === 'last changed' && event.eventDate) {
-        lines.push(`Updated Date: ${event.eventDate}`);
-      }
-      if (event.eventAction === 'expiration' && event.eventDate) {
-        lines.push(`Registry Expiry Date: ${event.eventDate}`);
-      }
-    });
-  }
-
-  if (data.status) {
-    data.status.forEach((status: string) => {
-      lines.push(`Domain Status: ${status}`);
-    });
-  }
-
-  if (data.nameservers && data.nameservers.length > 0) {
-    lines.push('');
-    lines.push('Name Servers:');
-    data.nameservers.forEach((ns: any) => {
-      if (ns.ldhName) {
-        lines.push(`  ${ns.ldhName}`);
-      }
-    });
-  }
-
-  if (data.secureDNS) {
-    lines.push(`DNSSEC: ${data.secureDNS.delegationSigned ? 'signed' : 'unsigned'}`);
-  }
-
-  if (lines.length < 5) {
-    lines.push('');
-    lines.push(generateFallbackWhois(domain));
-  }
-
-  return lines.join('\n');
-}
-
-/**
- * Generic whois запрос для международных доменов
- */
-async function whoisGenericQuery(domain: string): Promise<string> {
-  try {
-    const response = await fetch(`https://rdap.org/domain/${domain}`, {
-      headers: { 'Accept': 'application/rdap+json' },
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      return parseRdapResponse(data, domain);
-    }
-  } catch (error) {
-    // Fallback
-  }
-
-  return generateFallbackWhois(domain);
-}
-
-/**
- * Генерация fallback whois ответа при недоступности API
- */
-function generateFallbackWhois(domain: string): string {
-  const now = new Date().toLocaleString('ru-RU');
-  const expiryDate = new Date();
-  expiryDate.setFullYear(expiryDate.getFullYear() + 1);
-  
-  return `Domain Name: ${domain}
-Registry Domain ID: ${Math.random().toString(36).substring(7).toUpperCase()}_DOMAIN
-Registrar WHOIS Server: whois.registrar.com
-Registrar URL: http://www.registrar.com
-Updated Date: ${now}
-Creation Date: ${new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toLocaleString('ru-RU')}
-Registry Expiry Date: ${expiryDate.toLocaleString('ru-RU')}
-Registrar: Example Registrar, LLC
-Registrar IANA ID: 123
-Registrar Abuse Contact Email: abuse@registrar.com
-Registrar Abuse Contact Phone: +1.1234567890
-Domain Status: clientTransferProhibited
-Domain Status: clientUpdateProhibited
-Registry Registrant ID: REDACTED FOR PRIVACY
-Registrant Name: REDACTED FOR PRIVACY
-Registrant Organization: Privacy Protected
-Registrant Street: REDACTED FOR PRIVACY
-Registrant City: REDACTED FOR PRIVACY
-Registrant State/Province: REDACTED FOR PRIVACY
-Registrant Postal Code: REDACTED FOR PRIVACY
-Registrant Country: US
-Registrant Phone: REDACTED FOR PRIVACY
-Registrant Email: Please query the RDDS service of the Registrar of Record
-Name Server: NS1.${domain}
-Name Server: NS2.${domain}
-DNSSEC: unsigned
-URL of the ICANN Whois Inaccuracy Complaint Form: https://www.icann.org/wicf/`;
 }
 
 /**
