@@ -12,6 +12,10 @@ import { Card, Badge } from './components/ui';
 import { useDnsQuery } from './hooks';
 import { useDnsStore } from './store';
 
+/**
+ * Главный компонент приложения DNS Check
+ * Содержит основную форму для выполнения DNS-запросов
+ */
 function App() {
   const { executeQuery } = useDnsQuery();
   const { status, result } = useDnsStore();
@@ -32,7 +36,6 @@ function App() {
           </h2>
           <p className="text-lg text-slate-600 max-w-2xl mx-auto">
             Профессиональный инструмент для проверки DNS-записей доменов
-            Поддержка всех типов записей и популярных DNS-резолверов
           </p>
         </div>
 
@@ -80,7 +83,7 @@ function App() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-sm text-slate-500">
-              © 2026 DNS Dig. Инструмент для диагностики DNS-записей
+              © DNS Check. Инструмент для диагностики DNS-записей
             </p>
             <div className="flex items-center gap-6">
               <Link to="/docs" className="text-sm text-slate-500 hover:text-slate-700 transition-colors">

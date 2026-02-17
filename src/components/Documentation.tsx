@@ -65,6 +65,7 @@ export const Documentation: React.FC = () => {
             <li><a href="#basic-query" className="text-primary-600 hover:text-primary-700 hover:underline">Базовый DNS-запрос</a></li>
             <li><a href="#record-types" className="text-primary-600 hover:text-primary-700 hover:underline">Типы DNS-записей</a></li>
             <li><a href="#nameservers" className="text-primary-600 hover:text-primary-700 hover:underline">Выбор DNS-резолвера</a></li>
+            <li><a href="#query-options" className="text-primary-600 hover:text-primary-700 hover:underline">Опции запроса</a></li>
             <li><a href="#trace" className="text-primary-600 hover:text-primary-700 hover:underline">Трассировка (Trace)</a></li>
             <li><a href="#whois" className="text-primary-600 hover:text-primary-700 hover:underline">Whois-запрос</a></li>
             <li><a href="#no-recursive" className="text-primary-600 hover:text-primary-700 hover:underline">Нерекурсивный запрос</a></li>
@@ -174,6 +175,55 @@ export const Documentation: React.FC = () => {
               </tr>
             </tbody>
           </table>
+        </section>
+
+        {/* Опции запроса */}
+        <section id="query-options" className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 mb-8">
+          <h3 className="text-2xl font-bold text-slate-900 mb-4">Опции запроса</h3>
+          <p className="text-slate-600 mb-6">
+            Дополнительные опции для выполнения запроса расположены справа от кнопки «Выполнить DNS Check».
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="border border-slate-200 rounded-lg p-4">
+              <h4 className="font-semibold text-slate-900 mb-2">☑ Команда</h4>
+              <p className="text-sm text-slate-600">
+                Показывает dig команду, которая выполняется для текущего запроса. 
+                Команда отображается в отдельном блоке над результатами.
+              </p>
+            </div>
+
+            <div className="border border-slate-200 rounded-lg p-4">
+              <h4 className="font-semibold text-slate-900 mb-2">☑ Трассировка</h4>
+              <p className="text-sm text-slate-600">
+                Показывает полный путь DNS-запроса от корневых серверов до авторитативных серверов домена.
+                Результат отображается в формате Trace с пошаговым описанием каждого этапа.
+              </p>
+            </div>
+
+            <div className="border border-slate-200 rounded-lg p-4">
+              <h4 className="font-semibold text-slate-900 mb-2">☑ Whois</h4>
+              <p className="text-sm text-slate-600">
+                Выполняет Whois-запрос для получения регистрационной информации о домене.
+                Показывает данные о регистраторе, датах создания и окончания регистрации, статусы домена.
+              </p>
+            </div>
+
+            <div className="border border-slate-200 rounded-lg p-4">
+              <h4 className="font-semibold text-slate-900 mb-2">☑ Без рекурсии</h4>
+              <p className="text-sm text-slate-600">
+                Выполняет нерекурсивный запрос, показывая пошаговый путь делегирования.
+                В отличие от трассировки, каждый шаг выполняется отдельно без кэширования.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-6 bg-slate-50 rounded-lg p-4">
+            <p className="text-sm text-slate-600">
+              <strong>Примечание:</strong> Можно включить несколько опций одновременно. 
+              Результаты каждой опции будут отображены в отдельных вкладках форматов вывода.
+            </p>
+          </div>
         </section>
 
         {/* Трассировка */}
