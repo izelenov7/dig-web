@@ -1,8 +1,24 @@
 {
-  "name": "qwen_dig",
-  "private": true,
-  "version": "0.0.0",
+  "name": "dns-check",
+  "private": false,
+  "version": "1.0.0",
   "type": "module",
+  "description": "Профессиональный веб-инструмент для диагностики DNS-записей доменов",
+  "author": "izelenov7",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/izelenov7/dig-web.git"
+  },
+  "keywords": [
+    "dns",
+    "dns-check",
+    "dig",
+    "домен",
+    "диагностика",
+    "react",
+    "typescript"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
