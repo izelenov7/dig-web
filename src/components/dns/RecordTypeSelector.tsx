@@ -1,8 +1,8 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { DNS_RECORD_TYPES, DNS_RECORD_CATEGORIES } from '../../types';
+import { DNS_RECORD_TYPES, DNS_RECORD_CATEGORIES, type DnsRecordCategory } from '../../types';
 import { useDnsStore } from '../../store';
 
-type DnsRecordCategory = 'basic' | 'security' | 'service' | 'specialized' | 'deprecated';
+type CategoryKey = keyof typeof DNS_RECORD_CATEGORIES;
 
 interface RecordTypeSelectorProps {
   compact?: boolean;
@@ -54,7 +54,7 @@ export const RecordTypeSelector: React.FC<RecordTypeSelectorProps> = ({
   );
 
   const categories = useMemo(
-    () => Object.keys(groupedRecords) as DnsRecordCategory[],
+    () => Object.keys(groupedRecords) as CategoryKey[],
     [groupedRecords]
   );
 
@@ -135,7 +135,7 @@ export const RecordTypeSelector: React.FC<RecordTypeSelectorProps> = ({
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                {DNS_RECORD_CATEGORIES[category]}
+                {DNS_RECORD_CATEGORIES[category as CategoryKey]}
               </button>
             ))}
           </div>
@@ -146,7 +146,7 @@ export const RecordTypeSelector: React.FC<RecordTypeSelectorProps> = ({
               <div key={category} className="mb-4 last:mb-0">
                 {Object.keys(filteredRecords).length > 1 && (
                   <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
-                    {DNS_RECORD_CATEGORIES[category as DnsRecordCategory]}
+                    {DNS_RECORD_CATEGORIES[category as CategoryKey]}
                   </h4>
                 )}
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">

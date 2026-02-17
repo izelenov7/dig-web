@@ -1,6 +1,6 @@
 /**
  * Типы DNS-записей
- * Основано на RFC и поддержке в современных DNS-серверах
+ * Поддерживаемые сервисом типы записей
  */
 export type DnsRecordType =
   // Основные типы
@@ -12,6 +12,8 @@ export type DnsRecordType =
   | 'PTR'         // Указатель
   | 'SOA'         // Начало авторитета
   | 'TXT'         // Текстовая запись
+  | 'CAA'         // Certificate Authority Authorization
+  | 'SRV'         // Сервис
   | 'ANY'         // Все доступные записи
   
   // Безопасность DNS
@@ -20,80 +22,16 @@ export type DnsRecordType =
   | 'RRSIG'       // Подпись ресурсной записи
   | 'NSEC'        // Следующая безопасная запись
   | 'NSEC3'       // NSEC версии 3
-  | 'NSEC3PARAM'  // Параметры NSEC3
-  
-  // Сертификаты и безопасность
   | 'TLSA'        // TLS Authentication
-  | 'SMIMEA'      // S/MIME Authentication
-  | 'CERT'        // Сертификат
-  | 'OPENPGPKEY'  // OpenPGP ключ
-  
-  // Сервисные записи
-  | 'SRV'         // Сервис
-  | 'CAA'         // Certificate Authority Authorization
-  | 'HTTPS'       // HTTPS binding
-  | 'SVCB'        // Service Binding
   
   // Специализированные
-  | 'HINFO'       // Информация о хосте
   | 'NAPTR'       // Naming Authority Pointer
   | 'LOC'         // Географическая локация
-  | 'RP'          // Ответственное лицо
-  | 'AFSDB'       // AFS Database
-  | 'ALIAS'       // Псевдоним
-  
-  // Устаревшие / редкие
-  | 'ISDN'        // ISDN адрес
-  | 'X25'         // X.25 адрес
-  | 'GPOS'        // Географическая позиция
-  | 'WKS'         // Well Known Services
-  | 'RT'          // Route Through
-  | 'NSAP'        // NSAP адрес
-  | 'NSAP-PTR'    // NSAP указатель
-  | 'SIG'         // Подпись
-  | 'KEY'         // Ключ
-  | 'PX'          // Pointer to X.400
-  | 'ATMA'        // ATM адрес
-  | 'EID'         // Endpoint Identifier
-  | 'NIMLOC'      // Nimrod Locator
-  | 'KX'          // Key Exchanger
-  | 'DNAME'       // Делегирование имени
-  | 'SINK'        // SINK запись
-  | 'APL'         // Address Prefix List
-  | 'IPSECKEY'    // IPsec Key
-  | 'DHCID'       // DHCP Identifier
-  | 'NINFO'       // NINFO
-  | 'RKEY'        // RKEY
-  | 'TALINK'      // Trust Anchor LINK
-  | 'CDS'         // Child DS
-  | 'CDNSKEY'     // Child DNSKEY
-  | 'ONION'       // Onion Service
-  | 'TA'          // Trust Anchor
-  | 'DLV'         // DNSSEC Lookaside Validation
-  | 'URI'         // URI
-  | 'EUI48'       // EUI-48 адрес
-  | 'EUI64'       // EUI-64 адрес
-  | 'L32'         // Locator 32
-  | 'L64'         // Locator 64
-  | 'LP'          // Locator Pointer
-  | 'NIL'         // NIL
-  | 'UID'         // User ID
-  | 'GID'         // Group ID
-  | 'UINFO'       // User Info
-  | 'MINFO'       // Mailbox Info
-  | 'MB'          // Mailbox
-  | 'MG'          // Mail Group
-  | 'MR'          // Mail Rename
-  | 'MF'          // Mail Forwarder
-  | 'MD'          // Mail Destination
-  | 'NULL'        // NULL
-  | 'SPF'         // Sender Policy Framework (устарел)
-  | 'TKEY'        // Transaction Key
-  | 'TSIG'        // Transaction Signature
-  | 'IXFR'        // Incremental Zone Transfer
-  | 'AXFR'        // Full Zone Transfer
-  | 'MAILB'       // Mailbox-related
-  | 'MAILA'       // Mail Agent
+  | 'HINFO'       // Информация о хосте
+  | 'SSHFP'       // SSH Fingerprint
+  | 'SVCB'        // Service Binding
+  | 'HTTPS'       // HTTPS binding
+  | 'SPLICE'      // SPLICE record
   | '*';         // Wildcard
 
 /**
@@ -112,57 +50,33 @@ export interface DnsRecordTypeInfo {
  */
 export const DNS_RECORD_TYPES: DnsRecordTypeInfo[] = [
   // Основные
-  { type: 'A', name: 'A', description: 'IPv4 адрес', category: 'basic' },
-  { type: 'AAAA', name: 'AAAA', description: 'IPv6 адрес', category: 'basic' },
-  { type: 'CNAME', name: 'CNAME', description: 'Каноническое имя', category: 'basic' },
-  { type: 'MX', name: 'MX', description: 'Почтовый обменник', category: 'basic' },
-  { type: 'NS', name: 'NS', description: 'Сервер имён', category: 'basic' },
-  { type: 'PTR', name: 'PTR', description: 'Указатель', category: 'basic' },
-  { type: 'SOA', name: 'SOA', description: 'Начало авторитета', category: 'basic' },
-  { type: 'CAA', name: 'CAA', description: 'Certificate Authority Auth', rfc: 'RFC 8659', category: 'basic' },
-  { type: 'TXT', name: 'TXT', description: 'Текстовая запись', category: 'basic' },
-  { type: 'ANY', name: 'ANY', description: 'Все доступные записи', category: 'basic' },
+  { type: 'A', name: 'A', description: 'IPv4 адрес хоста. Сопоставляет доменное имя с 32-битным IPv4 адресом.', rfc: 'RFC 1035', category: 'basic' },
+  { type: 'AAAA', name: 'AAAA', description: 'IPv6 адрес хоста. Сопоставляет доменное имя с 128-битным IPv6 адресом.', rfc: 'RFC 3596', category: 'basic' },
+  { type: 'CNAME', name: 'CNAME', description: 'Каноническое имя. Псевдоним для другого доменного имени.', rfc: 'RFC 1035', category: 'basic' },
+  { type: 'MX', name: 'MX', description: 'Почтовый обменник. Указывает серверы для приёма электронной почты для домена.', rfc: 'RFC 1035', category: 'basic' },
+  { type: 'NS', name: 'NS', description: 'Сервер имён. Указывает авторитативные DNS-серверы для домена.', rfc: 'RFC 1035', category: 'basic' },
+  { type: 'PTR', name: 'PTR', description: 'Указатель. Используется для обратного DNS (IP → домен).', rfc: 'RFC 1035', category: 'basic' },
+  { type: 'SOA', name: 'SOA', description: 'Начало авторитета. Содержит административную информацию о зоне DNS.', rfc: 'RFC 1035', category: 'basic' },
+  { type: 'TXT', name: 'TXT', description: 'Текстовая запись. Произвольный текст для SPF, DKIM, DMARC и других целей.', rfc: 'RFC 1035', category: 'basic' },
+  { type: 'CAA', name: 'CAA', description: 'Certificate Authority Authorization. Указывает, какие CA могут выдавать сертификаты для домена.', rfc: 'RFC 8659', category: 'basic' },
+  { type: 'SRV', name: 'SRV', description: 'Сервис. Определяет хост и порт для сервисов (SIP, XMPP, LDAP).', rfc: 'RFC 2782', category: 'basic' },
+  { type: 'ANY', name: 'ANY', description: 'Запрос всех доступных записей для домена.', rfc: 'RFC 1035', category: 'basic' },
   
   // Безопасность DNS
-  { type: 'DNSKEY', name: 'DNSKEY', description: 'Ключ DNSSEC', rfc: 'RFC 4034', category: 'security' },
-  { type: 'DS', name: 'DS', description: 'Delegation Signer', rfc: 'RFC 4034', category: 'security' },
-  { type: 'RRSIG', name: 'RRSIG', description: 'Подпись записи', rfc: 'RFC 4034', category: 'security' },
-  { type: 'NSEC', name: 'NSEC', description: 'Следующая безопасная запись', rfc: 'RFC 4034', category: 'security' },
-  { type: 'NSEC3', name: 'NSEC3', description: 'NSEC версии 3', rfc: 'RFC 5155', category: 'security' },
-  { type: 'NSEC3PARAM', name: 'NSEC3PARAM', description: 'Параметры NSEC3', rfc: 'RFC 5155', category: 'security' },
-  
-  // Сертификаты
-  { type: 'TLSA', name: 'TLSA', description: 'TLS Authentication', rfc: 'RFC 6698', category: 'security' },
-  { type: 'SMIMEA', name: 'SMIMEA', description: 'S/MIME Authentication', rfc: 'RFC 8162', category: 'security' },
-  { type: 'CERT', name: 'CERT', description: 'Сертификат', rfc: 'RFC 4398', category: 'security' },
-  { type: 'OPENPGPKEY', name: 'OPENPGPKEY', description: 'OpenPGP ключ', rfc: 'RFC 7929', category: 'security' },
-  
-  // Сервисы
-  { type: 'SRV', name: 'SRV', description: 'Сервис', rfc: 'RFC 2782', category: 'service' },
-  { type: 'CAA', name: 'CAA', description: 'Certificate Authority Auth', rfc: 'RFC 8659', category: 'service' },
-  { type: 'HTTPS', name: 'HTTPS', description: 'HTTPS binding', rfc: 'RFC 9460', category: 'service' },
-  { type: 'SVCB', name: 'SVCB', description: 'Service Binding', rfc: 'RFC 9460', category: 'service' },
+  { type: 'DNSKEY', name: 'DNSKEY', description: 'Ключ DNSSEC. Содержит публичный ключ для проверки DNSSEC подписей.', rfc: 'RFC 4034', category: 'security' },
+  { type: 'DS', name: 'DS', description: 'Delegation Signer. Хэш DNSKEY для цепочки доверия DNSSEC.', rfc: 'RFC 4034', category: 'security' },
+  { type: 'RRSIG', name: 'RRSIG', description: 'Resource Record Signature. Криптографическая подпись набора записей DNSSEC.', rfc: 'RFC 4034', category: 'security' },
+  { type: 'NSEC', name: 'NSEC', description: 'Next Secure. Доказывает отсутствие записи в зоне DNSSEC.', rfc: 'RFC 4034', category: 'security' },
+  { type: 'NSEC3', name: 'NSEC3', description: 'NSEC версии 3. Улучшенная версия NSEC с хешированием имён.', rfc: 'RFC 5155', category: 'security' },
+  { type: 'TLSA', name: 'TLSA', description: 'TLS Authentication. Сопоставляет TLS сертификат с доменом (DANE).', rfc: 'RFC 6698', category: 'security' },
   
   // Специализированные
-  { type: 'HINFO', name: 'HINFO', description: 'Информация о хосте', rfc: 'RFC 1034', category: 'specialized' },
-  { type: 'NAPTR', name: 'NAPTR', description: 'Naming Authority Pointer', rfc: 'RFC 3403', category: 'specialized' },
-  { type: 'LOC', name: 'LOC', description: 'Геолокация', rfc: 'RFC 1876', category: 'specialized' },
-  { type: 'RP', name: 'RP', description: 'Ответственное лицо', rfc: 'RFC 1183', category: 'specialized' },
-  { type: 'AFSDB', name: 'AFSDB', description: 'AFS Database', rfc: 'RFC 1183', category: 'specialized' },
-  { type: 'ALIAS', name: 'ALIAS', description: 'Псевдоним', category: 'specialized' },
-  
-  // Устаревшие
-  { type: 'ISDN', name: 'ISDN', description: 'ISDN адрес', rfc: 'RFC 1183', category: 'deprecated' },
-  { type: 'X25', name: 'X25', description: 'X.25 адрес', rfc: 'RFC 1183', category: 'deprecated' },
-  { type: 'GPOS', name: 'GPOS', description: 'Географическая позиция', rfc: 'RFC 1712', category: 'deprecated' },
-  { type: 'WKS', name: 'WKS', description: 'Well Known Services', rfc: 'RFC 1035', category: 'deprecated' },
-  { type: 'RT', name: 'RT', description: 'Route Through', rfc: 'RFC 1183', category: 'deprecated' },
-  { type: 'NSAP', name: 'NSAP', description: 'NSAP адрес', rfc: 'RFC 1706', category: 'deprecated' },
-  { type: 'KX', name: 'KX', description: 'Key Exchanger', rfc: 'RFC 2230', category: 'deprecated' },
-  { type: 'DNAME', name: 'DNAME', description: 'Делегирование имени', rfc: 'RFC 6672', category: 'deprecated' },
-  { type: 'EUI48', name: 'EUI48', description: 'EUI-48 адрес', rfc: 'RFC 7043', category: 'deprecated' },
-  { type: 'EUI64', name: 'EUI64', description: 'EUI-64 адрес', rfc: 'RFC 7043', category: 'deprecated' },
-  { type: 'SPF', name: 'SPF', description: 'Sender Policy Framework', rfc: 'RFC 7208', category: 'deprecated' },
+  { type: 'NAPTR', name: 'NAPTR', description: 'Naming Authority Pointer. Правила для преобразования URI (ENUM, SIP).', rfc: 'RFC 3403', category: 'specialized' },
+  { type: 'LOC', name: 'LOC', description: 'Географическая локация. Координаты (широта, долгота, высота) сервера.', rfc: 'RFC 1876', category: 'specialized' },
+  { type: 'HINFO', name: 'HINFO', description: 'Информация о хосте. Тип CPU и ОС сервера.', rfc: 'RFC 1035', category: 'specialized' },
+  { type: 'SSHFP', name: 'SSHFP', description: 'SSH Fingerprint. Отпечаток SSH ключа для проверки подлинности.', rfc: 'RFC 4255', category: 'specialized' },
+  { type: 'SVCB', name: 'SVCB', description: 'Service Binding. Параметры для подключения к сервису.', rfc: 'RFC 9460', category: 'specialized' },
+  { type: 'HTTPS', name: 'HTTPS', description: 'HTTPS binding. Параметры для HTTPS подключений (ALPN, ECH).', rfc: 'RFC 9460', category: 'specialized' },
 ];
 
 /**
@@ -171,9 +85,7 @@ export const DNS_RECORD_TYPES: DnsRecordTypeInfo[] = [
 export const DNS_RECORD_CATEGORIES = {
   basic: 'Основные',
   security: 'Безопасность',
-  service: 'Сервисы',
   specialized: 'Специализированные',
-  deprecated: 'Устаревшие',
 } as const;
 
 export type DnsRecordCategory = keyof typeof DNS_RECORD_CATEGORIES;

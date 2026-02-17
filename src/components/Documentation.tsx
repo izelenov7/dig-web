@@ -352,13 +352,17 @@ google.com.		300	IN	A	142.250.50.46`}
               © 2026 DNS Dig. Инструмент для диагностики DNS-записей
             </p>
             <div className="flex items-center gap-6">
-              <a
-                href="https://github.com/izelenov7/dig-web"
-                target="_blank"
-                rel="noopener noreferrer"
+              <Link
+                to="/"
                 className="text-sm text-slate-500 hover:text-slate-700 transition-colors"
               >
-                Документация
+                Сервис
+              </Link>
+              <a
+                href="mailto:izelenov7@gmail.com"
+                className="text-sm text-slate-500 hover:text-slate-700 transition-colors"
+              >
+                Связаться с автором проекта
               </a>
               <a
                 href="https://github.com/izelenov7/dig-web"
