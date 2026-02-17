@@ -28,6 +28,12 @@ export const ResultsPanel: React.FC<ResultsPanelProps> = ({
     const { query } = result;
     const args: string[] = [query.type, query.domain];
 
+    // Извлекаем IP сервера из stats.server
+    const serverMatch = stats.server.match(/\(([^)]+)\)/);
+    const serverIp = serverMatch ? serverMatch[1] : '1.1.1.1';
+    
+    args.push(`@${serverIp}`);
+
     if (options.noRecursive) args.push('+norecurse');
 
     return `dig ${args.join(' ')}`;

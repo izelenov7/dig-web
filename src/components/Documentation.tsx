@@ -100,34 +100,23 @@ export const Documentation: React.FC = () => {
         <section id="record-types" className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 mb-8">
           <h3 className="text-2xl font-bold text-slate-900 mb-4">Типы DNS-записей</h3>
           <p className="text-slate-600 mb-6">
-            Сервис поддерживает более 60 типов DNS-записей.
+            Сервис поддерживает 11 основных типов DNS-записей.
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="border border-slate-200 rounded-lg p-4">
-              <h4 className="font-semibold text-slate-900 mb-2">Основные</h4>
-              <ul className="space-y-1 text-sm text-slate-700">
-                <li><strong>A</strong> — IPv4 адрес</li>
-                <li><strong>AAAA</strong> — IPv6 адрес</li>
-                <li><strong>CNAME</strong> — Каноническое имя</li>
-                <li><strong>MX</strong> — Почтовый обменник</li>
-                <li><strong>NS</strong> — Сервер имён</li>
-                <li><strong>TXT</strong> — Текстовая запись</li>
-                <li><strong>SOA</strong> — Начало авторитета</li>
-                <li><strong>CAA</strong> — Certificate Authority Auth</li>
-              </ul>
-            </div>
-
-            <div className="border border-slate-200 rounded-lg p-4">
-              <h4 className="font-semibold text-slate-900 mb-2">Безопасность</h4>
-              <ul className="space-y-1 text-sm text-slate-700">
-                <li><strong>DNSKEY</strong> — Ключ DNSSEC</li>
-                <li><strong>DS</strong> — Delegation Signer</li>
-                <li><strong>RRSIG</strong> — Подпись записи</li>
-                <li><strong>NSEC/NSEC3</strong> — Безопасная запись</li>
-                <li><strong>TLSA</strong> — TLS Authentication</li>
-              </ul>
-            </div>
+          <div className="border border-slate-200 rounded-lg p-4">
+            <h4 className="font-semibold text-slate-900 mb-2">Основные</h4>
+            <ul className="space-y-1 text-sm text-slate-700">
+              <li><strong>A</strong> — IPv4 адрес хоста</li>
+              <li><strong>AAAA</strong> — IPv6 адрес хоста</li>
+              <li><strong>CNAME</strong> — Каноническое имя (псевдоним)</li>
+              <li><strong>MX</strong> — Почтовый обменник для приёма email</li>
+              <li><strong>NS</strong> — Авторитативные DNS-серверы домена</li>
+              <li><strong>PTR</strong> — Обратный DNS (IP → домен)</li>
+              <li><strong>SOA</strong> — Административная информация о зоне</li>
+              <li><strong>TXT</strong> — Текстовая запись для SPF, DKIM, DMARC</li>
+              <li><strong>CAA</strong> — Разрешённые центры выдачи сертификатов</li>
+              <li><strong>SRV</strong> — Хост и порт для сервисов (SIP, XMPP)</li>
+            </ul>
           </div>
         </section>
 

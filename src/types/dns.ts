@@ -14,25 +14,7 @@ export type DnsRecordType =
   | 'TXT'         // Текстовая запись
   | 'CAA'         // Certificate Authority Authorization
   | 'SRV'         // Сервис
-  | 'ANY'         // Все доступные записи
-  
-  // Безопасность DNS
-  | 'DNSKEY'      // Ключ DNSSEC
-  | 'DS'          // Delegation Signer
-  | 'RRSIG'       // Подпись ресурсной записи
-  | 'NSEC'        // Следующая безопасная запись
-  | 'NSEC3'       // NSEC версии 3
-  | 'TLSA'        // TLS Authentication
-  
-  // Специализированные
-  | 'NAPTR'       // Naming Authority Pointer
-  | 'LOC'         // Географическая локация
-  | 'HINFO'       // Информация о хосте
-  | 'SSHFP'       // SSH Fingerprint
-  | 'SVCB'        // Service Binding
-  | 'HTTPS'       // HTTPS binding
-  | 'SPLICE'      // SPLICE record
-  | '*';         // Wildcard
+  | 'ANY';        // Все доступные записи
 
 /**
  * Информация о типе DNS-записи
@@ -61,22 +43,6 @@ export const DNS_RECORD_TYPES: DnsRecordTypeInfo[] = [
   { type: 'CAA', name: 'CAA', description: 'Разрешённые центры выдачи сертификатов', rfc: 'RFC 8659', category: 'basic' },
   { type: 'SRV', name: 'SRV', description: 'Хост и порт для сервисов (SIP, XMPP)', rfc: 'RFC 2782', category: 'basic' },
   { type: 'ANY', name: 'ANY', description: 'Все доступные записи домена', rfc: 'RFC 1035', category: 'basic' },
-  
-  // Безопасность DNS
-  { type: 'DNSKEY', name: 'DNSKEY', description: 'Публичный ключ для проверки DNSSEC', rfc: 'RFC 4034', category: 'security' },
-  { type: 'DS', name: 'DS', description: 'Хэш DNSKEY для цепочки доверия', rfc: 'RFC 4034', category: 'security' },
-  { type: 'RRSIG', name: 'RRSIG', description: 'Криптографическая подпись записей DNSSEC', rfc: 'RFC 4034', category: 'security' },
-  { type: 'NSEC', name: 'NSEC', description: 'Доказывает отсутствие записи в зоне', rfc: 'RFC 4034', category: 'security' },
-  { type: 'NSEC3', name: 'NSEC3', description: 'NSEC с хешированием имён', rfc: 'RFC 5155', category: 'security' },
-  { type: 'TLSA', name: 'TLSA', description: 'Сопоставление TLS сертификата с доменом', rfc: 'RFC 6698', category: 'security' },
-  
-  // Специализированные
-  { type: 'NAPTR', name: 'NAPTR', description: 'Правила для преобразования URI', rfc: 'RFC 3403', category: 'specialized' },
-  { type: 'LOC', name: 'LOC', description: 'Географические координаты сервера', rfc: 'RFC 1876', category: 'specialized' },
-  { type: 'HINFO', name: 'HINFO', description: 'Тип CPU и ОС сервера', rfc: 'RFC 1035', category: 'specialized' },
-  { type: 'SSHFP', name: 'SSHFP', description: 'Отпечаток SSH ключа', rfc: 'RFC 4255', category: 'specialized' },
-  { type: 'SVCB', name: 'SVCB', description: 'Параметры для подключения к сервису', rfc: 'RFC 9460', category: 'specialized' },
-  { type: 'HTTPS', name: 'HTTPS', description: 'Параметры для HTTPS подключений', rfc: 'RFC 9460', category: 'specialized' },
 ];
 
 /**
@@ -84,8 +50,6 @@ export const DNS_RECORD_TYPES: DnsRecordTypeInfo[] = [
  */
 export const DNS_RECORD_CATEGORIES = {
   basic: 'Основные',
-  security: 'Безопасность',
-  specialized: 'Специализированные',
 } as const;
 
 export type DnsRecordCategory = keyof typeof DNS_RECORD_CATEGORIES;

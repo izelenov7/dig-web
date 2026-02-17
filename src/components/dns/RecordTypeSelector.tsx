@@ -1,8 +1,6 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { DNS_RECORD_TYPES, DNS_RECORD_CATEGORIES, type DnsRecordCategory } from '../../types';
+import { DNS_RECORD_TYPES } from '../../types';
 import { useDnsStore } from '../../store';
-
-type CategoryKey = keyof typeof DNS_RECORD_CATEGORIES;
 
 interface RecordTypeSelectorProps {
   compact?: boolean;
@@ -13,31 +11,6 @@ export const RecordTypeSelector: React.FC<RecordTypeSelectorProps> = ({
 }) => {
   const { recordType, setRecordType } = useDnsStore();
   const [isOpen, setIsOpen] = useState(false);
-  const [activeCategory, setActiveCategory] = useState<DnsRecordCategory | 'all'>('all');
-
-  // Группировка записей по категориям
-  const groupedRecords = useMemo(() => {
-    const groups: Record<string, typeof DNS_RECORD_TYPES> = {};
-    
-    DNS_RECORD_TYPES.forEach((record) => {
-      if (!groups[record.category]) {
-        groups[record.category] = [];
-      }
-      groups[record.category].push(record);
-    });
-    
-    return groups;
-  }, []);
-
-  // Фильтрация по активной категории
-  const filteredRecords = useMemo(() => {
-    if (activeCategory === 'all') {
-      return groupedRecords;
-    }
-    return {
-      [activeCategory]: groupedRecords[activeCategory] || [],
-    };
-  }, [groupedRecords, activeCategory]);
 
   // Текущий выбранный тип
   const selectedRecord = useMemo(
@@ -51,11 +24,6 @@ export const RecordTypeSelector: React.FC<RecordTypeSelectorProps> = ({
       setIsOpen(false);
     },
     [setRecordType, recordType]
-  );
-
-  const categories = useMemo(
-    () => Object.keys(groupedRecords) as CategoryKey[],
-    [groupedRecords]
   );
 
   if (compact) {
@@ -113,67 +81,31 @@ export const RecordTypeSelector: React.FC<RecordTypeSelectorProps> = ({
       {/* Выпадающий список */}
       {isOpen && (
         <div className="absolute z-50 mt-2 w-full max-w-2xl bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden">
-          {/* Табы категорий */}
-          <div className="flex items-center gap-1 px-3 py-2 bg-slate-50 border-b border-slate-200 overflow-x-auto">
-            <button
-              onClick={() => setActiveCategory('all')}
-              className={`px-3 py-1.5 text-sm font-medium rounded-lg whitespace-nowrap transition-colors ${
-                activeCategory === 'all'
-                  ? 'bg-white text-primary-600 shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              Все
-            </button>
-            {categories.map((category) => (
-              <button
-                key={category}
-                onClick={() => setActiveCategory(category)}
-                className={`px-3 py-1.5 text-sm font-medium rounded-lg whitespace-nowrap transition-colors ${
-                  activeCategory === category
-                    ? 'bg-white text-primary-600 shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                {DNS_RECORD_CATEGORIES[category as CategoryKey]}
-              </button>
-            ))}
-          </div>
-
           {/* Список записей */}
           <div className="max-h-80 overflow-y-auto p-3">
-            {Object.entries(filteredRecords).map(([category, records]) => (
-              <div key={category} className="mb-4 last:mb-0">
-                {Object.keys(filteredRecords).length > 1 && (
-                  <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
-                    {DNS_RECORD_CATEGORIES[category as CategoryKey]}
-                  </h4>
-                )}
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {records.map((record) => (
-                    <button
-                      key={record.type}
-                      onClick={() => handleSelect(record.type)}
-                      className={`
-                        p-2.5 rounded-lg text-left transition-all duration-200
-                        ${
-                          recordType === record.type
-                            ? 'bg-primary-50 border-primary-200 border'
-                            : 'hover:bg-slate-50 border border-transparent'
-                        }
-                      `}
-                    >
-                      <div className="font-mono text-sm font-semibold text-slate-900">
-                        {record.name}
-                      </div>
-                      <div className="text-xs text-slate-500 truncate">
-                        {record.description}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ))}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {DNS_RECORD_TYPES.map((record) => (
+                <button
+                  key={record.type}
+                  onClick={() => handleSelect(record.type)}
+                  className={`
+                    p-2.5 rounded-lg text-left transition-all duration-200
+                    ${
+                      recordType === record.type
+                        ? 'bg-primary-50 border-primary-200 border'
+                        : 'hover:bg-slate-50 border border-transparent'
+                    }
+                  `}
+                >
+                  <div className="font-mono text-sm font-semibold text-slate-900">
+                    {record.name}
+                  </div>
+                  <div className="text-xs text-slate-500 truncate">
+                    {record.description}
+                  </div>
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Подвал с информацией */}
@@ -197,7 +129,7 @@ export const RecordTypeSelector: React.FC<RecordTypeSelectorProps> = ({
 
       {/* Быстрые выборы */}
       <div className="mt-3 flex flex-wrap gap-2">
-        {['A', 'AAAA', 'CNAME', 'MX', 'NS', 'TXT', 'SOA', 'CAA', 'ANY'].map((type) => (
+        {['A', 'AAAA', 'CNAME', 'MX', 'NS', 'PTR', 'SOA', 'TXT', 'CAA', 'SRV', 'ANY'].map((type) => (
           <button
             key={type}
             onClick={() => handleSelect(type)}
