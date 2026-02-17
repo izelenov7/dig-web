@@ -6,15 +6,15 @@ import {
   NameserverSelector,
   SubmitButton,
   ResultsPanel,
-  QueryOptionsDropdown,
+  QueryOptionsBar,
 } from './components/dns';
-import { Card } from './components/ui';
+import { Card, Badge } from './components/ui';
 import { useDnsQuery } from './hooks';
 import { useDnsStore } from './store';
 
 function App() {
   const { executeQuery } = useDnsQuery();
-  const { status } = useDnsStore();
+  const { status, result } = useDnsStore();
 
   const handleSubmit = () => {
     executeQuery();
@@ -31,8 +31,8 @@ function App() {
             DNS Диагностика
           </h2>
           <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-            Профессиональный инструмент для проверки DNS-записей доменов.
-            Поддержка всех типов записей и популярных DNS-резолверов.
+            Профессиональный инструмент для проверки DNS-записей доменов
+            Поддержка всех типов записей и популярных DNS-резолверов
           </p>
         </div>
 
@@ -52,10 +52,21 @@ function App() {
             {/* Nameservers */}
             <NameserverSelector />
 
-            {/* Кнопки действия */}
-            <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-              <SubmitButton onSubmit={handleSubmit} />
-              <QueryOptionsDropdown />
+            {/* Кнопки действия и опции */}
+            <div className="pt-4 border-t border-slate-100">
+              <div className="flex items-center justify-between gap-4">
+                <SubmitButton onSubmit={handleSubmit} />
+                <QueryOptionsBar />
+              </div>
+              
+              {/* Статус запроса */}
+              {result && (
+                <div className="flex items-center gap-2 mt-3">
+                  <Badge variant="success">{result.stats.status}</Badge>
+                  <Badge variant="info">{result.stats.queryTime} ms</Badge>
+                  <Badge variant="default">{result.stats.server}</Badge>
+                </div>
+              )}
             </div>
           </div>
         </Card>
@@ -76,7 +87,9 @@ function App() {
                 Документация
               </Link>
               <a
-                href="mailto:izelenov7@gmail.com"
+                href="https://vk.com/igorqx"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="text-sm text-slate-500 hover:text-slate-700 transition-colors"
               >
                 Связаться с автором проекта

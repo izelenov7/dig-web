@@ -359,7 +359,9 @@ google.com.		300	IN	A	142.250.50.46`}
                 Сервис
               </Link>
               <a
-                href="mailto:izelenov7@gmail.com"
+                href="https://vk.com/igorqx"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="text-sm text-slate-500 hover:text-slate-700 transition-colors"
               >
                 Связаться с автором проекта

@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { Button, Badge } from '../ui';
+import { Button } from '../ui';
 import { useDnsStore } from '../../store';
 
 interface SubmitButtonProps {
@@ -7,7 +7,7 @@ interface SubmitButtonProps {
 }
 
 export const SubmitButton: React.FC<SubmitButtonProps> = ({ onSubmit }) => {
-  const { domain, status, resetForm, clearResult, result } = useDnsStore();
+  const { domain, status, resetForm, clearResult } = useDnsStore();
 
   const isLoading = status === 'loading';
   const isDisabled = !domain.trim() || isLoading;
@@ -63,15 +63,6 @@ export const SubmitButton: React.FC<SubmitButtonProps> = ({ onSubmit }) => {
           />
         </svg>
       </Button>
-
-      {/* Статус запроса */}
-      {result && (
-        <div className="flex items-center gap-2 ml-auto">
-          <Badge variant="success">{result.stats.status}</Badge>
-          <Badge variant="info">{result.stats.queryTime} ms</Badge>
-          <Badge variant="default">🖥 {result.stats.server}</Badge>
-        </div>
-      )}
     </div>
   );
 };
