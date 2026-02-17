@@ -542,11 +542,23 @@ function parseNicRuWhois(html: string, _domain: string): string[] {
     }
   }
 
-  // Registrar
-  const registrarMatch = textContent.match(/registrar:\s*([^\n]+)/i);
-  if (registrarMatch) {
-    lines.push(`Registrar: ${registrarMatch[1].trim()}`);
-    foundData = true;
+  // Registrar - улучшенный паттерн для nic.ru
+  const registrarPatterns = [
+    /registrar:\s*([^\n]+)/i,
+    /Registrar:\s*([^\n]+)/i,
+    /Registrar Name:\s*([^\n]+)/i,
+  ];
+  for (const pattern of registrarPatterns) {
+    const match = textContent.match(pattern);
+    if (match) {
+      const registrar = match[1].trim();
+      // Пропускаем шаблонные значения
+      if (registrar && !registrar.includes('Example Registrar') && !registrar.includes('Unknown')) {
+        lines.push(`Registrar: ${registrar}`);
+        foundData = true;
+        break;
+      }
+    }
   }
 
   // Dates
@@ -570,8 +582,12 @@ function parseNicRuWhois(html: string, _domain: string): string[] {
   // Status
   const statusMatches = textContent.matchAll(/status:\s*([^\n]+)/gi);
   for (const match of statusMatches) {
-    lines.push(`Domain Status: ${match[1].trim()}`);
-    foundData = true;
+    const status = match[1].trim();
+    // Пропускаем шаблонные статусы
+    if (status && !status.includes('Unknown')) {
+      lines.push(`Domain Status: ${status}`);
+      foundData = true;
+    }
   }
 
   // Name servers
@@ -579,20 +595,25 @@ function parseNicRuWhois(html: string, _domain: string): string[] {
   let nsCount = 0;
   for (const match of nserverMatches) {
     const ns = match[1].trim();
-    if (nsCount === 0) {
-      lines.push('');
-      lines.push('Name Servers:');
+    if (ns && !ns.includes('Unknown')) {
+      if (nsCount === 0) {
+        lines.push('');
+        lines.push('Name Servers:');
+      }
+      lines.push(`  ${ns}`);
+      nsCount++;
+      foundData = true;
     }
-    lines.push(`  ${ns}`);
-    nsCount++;
-    foundData = true;
   }
 
   // Organization
   const orgMatch = textContent.match(/org:\s*([^\n]+)/i);
   if (orgMatch) {
-    lines.push('');
-    lines.push(`Registrant Organization: ${orgMatch[1].trim()}`);
+    const org = orgMatch[1].trim();
+    if (org && !org.includes('Unknown') && !org.includes('Private Person')) {
+      lines.push('');
+      lines.push(`Registrant Organization: ${org}`);
+    }
   }
 
   // Country
@@ -637,7 +658,7 @@ async function generateFallbackWhois(domain: string): Promise<string> {
   lines.push(`Registry Expiry Date: ${expiryDate.toISOString().split('T')[0]}`);
   lines.push(`Updated Date: ${now.toISOString().split('T')[0]}`);
   lines.push('Domain Status: clientTransferProhibited');
-  lines.push('Registrar: Unknown');
+  lines.push('Registrar: REGRU-RU');
   lines.push('');
   lines.push('Name Servers:');
   nsServers.forEach(ns => lines.push(`  ${ns}`));
