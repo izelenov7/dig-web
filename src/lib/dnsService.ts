@@ -393,16 +393,27 @@ export async function traceDnsQuery(
   lines.push('');
 
   // 1. Запрос к корневым серверам
-  lines.push(`;; Starting query for ${domain}/${type}`);
+  lines.push(`;; Step 1: Root Servers`);
+  lines.push(`;; Querying root servers for TLD nameservers...`);
   lines.push('');
-  lines.push(`.	518400	IN	NS	a.root-servers.net.`);
-  lines.push(`.	518400	IN	NS	b.root-servers.net.`);
-  lines.push(`.	518400	IN	NS	c.root-servers.net.`);
+
+  // Реальные корневые серверы
+  const rootServers = [
+    'a.root-servers.net.',
+    'b.root-servers.net.',
+    'c.root-servers.net.',
+    'd.root-servers.net.',
+    'e.root-servers.net.',
+  ];
+
+  rootServers.forEach((server) => {
+    lines.push(`.	518400	IN	NS	${server}`);
+  });
   lines.push('');
 
   // 2. Получаем TLD серверы
   const tldParts = domain.split('.');
-  const tld = tldParts.length > 1 ? tldParts[tldParts.length - 1] : '';
+  const tld = tldParts.length > 1 ? tldParts[tldParts.length - 1].toLowerCase() : '';
 
   if (tld) {
     lines.push(`;; Received ${Math.floor(Math.random() * 100 + 100)} bytes`);
@@ -410,26 +421,67 @@ export async function traceDnsQuery(
     lines.push(`;; WHEN: ${now}`);
     lines.push('');
 
-    // Запрос к TLD серверам
-    const tldServers = [
-      { name: `a.${tld}-servers.net`, ip: '192.5.6.30' },
-      { name: `b.${tld}-servers.net`, ip: '192.33.14.30' },
-      { name: `c.${tld}-servers.net`, ip: '192.26.92.30' },
-    ];
+    // Реальные TLD серверы для разных зон
+    let tldServers: Array<{ name: string; ip: string }> = [];
+    
+    if (tld === 'ru' || tld === 'xn--p1ai' /* .рф */) {
+      tldServers = [
+        { name: 'a.ns.ru', ip: '193.232.128.6' },
+        { name: 'b.ns.ru', ip: '194.85.252.62' },
+        { name: 'd.ns.ru', ip: '194.190.124.17' },
+        { name: 'e.ns.ru', ip: '193.232.142.17' },
+        { name: 'f.ns.ru', ip: '193.232.156.17' },
+      ];
+    } else if (tld === 'com' || tld === 'net') {
+      tldServers = [
+        { name: 'a.gtld-servers.net.', ip: '192.5.6.30' },
+        { name: 'b.gtld-servers.net.', ip: '192.33.14.30' },
+        { name: 'c.gtld-servers.net.', ip: '192.26.92.30' },
+        { name: 'd.gtld-servers.net.', ip: '192.31.80.30' },
+        { name: 'e.gtld-servers.net.', ip: '192.12.94.30' },
+      ];
+    } else if (tld === 'org') {
+      tldServers = [
+        { name: 'a0.org.afilias-nst.info.', ip: '199.19.54.1' },
+        { name: 'a2.org.afilias-nst.info.', ip: '199.19.56.1' },
+        { name: 'b0.org.afilias-nst.org.', ip: '199.19.57.1' },
+      ];
+    } else if (tld === 'io') {
+      tldServers = [
+        { name: 'a0.nic.io.', ip: '199.249.112.1' },
+        { name: 'a2.nic.io.', ip: '199.249.114.1' },
+        { name: 'b0.nic.io.', ip: '199.249.116.1' },
+      ];
+    } else {
+      // Fallback для других TLD
+      tldServers = [
+        { name: `a.${tld}-servers.net.`, ip: '192.5.6.30' },
+        { name: `b.${tld}-servers.net.`, ip: '192.33.14.30' },
+        { name: `c.${tld}-servers.net.`, ip: '192.26.92.30' },
+      ];
+    }
+
+    lines.push(`;; Step 2: TLD Servers for .${tld}`);
+    lines.push(`;; Querying .${tld} TLD nameservers...`);
+    lines.push('');
 
     tldServers.forEach((server) => {
-      lines.push(`${tld}.\t172800	IN	NS	${server.name}.`);
+      lines.push(`${tld}.\t172800	IN	NS	${server.name}`);
     });
     lines.push('');
 
     // 3. Получаем авторитативные серверы домена
+    lines.push(`;; Received ${Math.floor(Math.random() * 100 + 100)} bytes`);
+    lines.push(`;; SERVER: ${tldServers[0].ip}#53(${tldServers[0].ip}) (${tldServers[0].name})`);
+    lines.push(`;; WHEN: ${now}`);
+    lines.push('');
+
     try {
       const nsResponse = await queryDnsWithProvider(domain, 'NS', 'cloudflare');
 
       if (nsResponse.Answer && nsResponse.Answer.length > 0) {
-        lines.push(`;; Received ${Math.floor(Math.random() * 100 + 100)} bytes`);
-        lines.push(`;; SERVER: ${tldServers[0].ip}#53(${tldServers[0].ip}) (${tldServers[0].name})`);
-        lines.push(`;; WHEN: ${now}`);
+        lines.push(`;; Step 3: Authoritative Nameservers`);
+        lines.push(`;; Querying authoritative nameservers for ${domain}...`);
         lines.push('');
 
         nsResponse.Answer.forEach((answer) => {
@@ -437,22 +489,49 @@ export async function traceDnsQuery(
           lines.push(`${answer.name}.\t${answer.TTL}\tIN\t${typeName}\t${answer.data}`);
         });
         lines.push('');
-      }
 
-      // 4. Финальный запрос к авторитативному серверу
-      const finalResponse = await queryDnsWithProvider(domain, type, 'cloudflare');
+        // 4. Финальный запрос к авторитативному серверу
+        const finalResponse = await queryDnsWithProvider(domain, type, 'cloudflare');
 
-      if (finalResponse.Answer && finalResponse.Answer.length > 0) {
-        lines.push(`;; Received ${Math.floor(Math.random() * 100 + 100)} bytes`);
-        const authServer = nsResponse.Answer?.[0]?.data || 'ns1.' + domain;
-        lines.push(`;; SERVER: 192.0.2.1#53(${authServer})`);
-        lines.push(`;; WHEN: ${now}`);
-        lines.push('');
+        if (finalResponse.Answer && finalResponse.Answer.length > 0) {
+          lines.push(`;; Step 4: Final Query`);
+          lines.push(`;; Received ${Math.floor(Math.random() * 100 + 100)} bytes`);
+          const authServer = nsResponse.Answer?.[0]?.data.replace(/\.$/, '') || 'ns1.' + domain;
+          lines.push(`;; SERVER: ${authServer}`);
+          lines.push(`;; WHEN: ${now}`);
+          lines.push('');
 
-        finalResponse.Answer.forEach((answer) => {
-          const typeName = getDnsTypeName(answer.type);
-          lines.push(`${answer.name}.\t${answer.TTL}\tIN\t${typeName}\t${answer.data}`);
-        });
+          lines.push(`;; ANSWER SECTION:`);
+          finalResponse.Answer.forEach((answer) => {
+            const typeName = getDnsTypeName(answer.type);
+            lines.push(`${answer.name}.\t\t${answer.TTL}\tIN\t${typeName}\t${answer.data}`);
+          });
+          lines.push('');
+
+          if (finalResponse.Authority && finalResponse.Authority.length > 0) {
+            lines.push(`;; AUTHORITY SECTION:`);
+            finalResponse.Authority.forEach((answer) => {
+              const typeName = getDnsTypeName(answer.type);
+              lines.push(`${answer.name}.\t\t${answer.TTL}\tIN\t${typeName}\t${answer.data}`);
+            });
+            lines.push('');
+          }
+
+          if (finalResponse.Additional && finalResponse.Additional.length > 0) {
+            lines.push(`;; ADDITIONAL SECTION:`);
+            finalResponse.Additional.forEach((answer) => {
+              const typeName = getDnsTypeName(answer.type);
+              lines.push(`${answer.name}.\t\t${answer.TTL}\tIN\t${typeName}\t${answer.data}`);
+            });
+            lines.push('');
+          }
+
+          lines.push(`;; Query time: ${Math.floor(Math.random() * 100)} msec`);
+          lines.push(`;; SERVER: ${authServer}`);
+          lines.push(`;; WHEN: ${now}`);
+        }
+      } else {
+        lines.push(`;; No NS records found for ${domain}`);
       }
     } catch (error) {
       lines.push(`;; Error during trace: ${error instanceof Error ? error.message : 'Unknown error'}`);

@@ -49,16 +49,18 @@ export function useDnsQuery() {
       return;
     }
 
-    // Нормализация и повторная валидация
+    // Нормализация
     const normalizedDomain = normalizeInput(queryDomain);
-    if (!isValidDomain(normalizedDomain)) {
+    
+    // Конвертация IDN доменов в Punycode для валидации и DNS запросов
+    const punycodeDomain = toPunycode(normalizedDomain);
+    
+    // Валидация после конвертации в punycode
+    if (!isValidDomain(punycodeDomain)) {
       setError(`Некорректный домен или IP-адрес: "${queryDomain}"`);
       return;
     }
 
-    // Конвертация IDN доменов в Punycode для DNS запросов
-    const punycodeDomain = toPunycode(normalizedDomain);
-    
     // Обновляем домен в сторе после нормализации
     if (normalizedDomain !== queryDomain) {
       setDomain(normalizedDomain);
