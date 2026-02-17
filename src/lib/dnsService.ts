@@ -1,6 +1,19 @@
 /**
- * DNS-over-HTTPS сервис для выполнения DNS-запросов
- * Использует публичные DoH API
+ * DNS Dig - DNS-over-HTTPS сервис для выполнения DNS-запросов
+ * 
+ * Этот файл содержит функции для выполнения DNS-запросов через публичные DoH API.
+ * Поддерживаемые провайдеры: Cloudflare, Google, Quad9, AdGuard.
+ * 
+ * Основные функции:
+ * - queryDnsWithProvider() - выполнение DNS запроса к выбранному провайдеру
+ * - traceDnsQuery() - трассировка пути от корневых серверов
+ * - whoisQuery() - whois запрос информации о домене
+ * - nonRecursiveQuery() - нерекурсивный запрос
+ * 
+ * Для добавления нового DNS провайдера:
+ * 1. Добавьте эндпоинт в DOH_ENDPOINTS
+ * 2. Добавьте тип в DohProvider
+ * 3. Обновите NAMESERVER_PRESETS в types/nameservers.ts
  */
 
 import type { DnsRecordType } from '../types';
@@ -60,13 +73,9 @@ const DNS_TYPE_NUMBERS: Record<DnsRecordType, number> = {
   'A': 1,
   'NS': 2,
   'CNAME': 5,
-  'SOA': 6,
-  'PTR': 12,
   'MX': 15,
   'TXT': 16,
   'AAAA': 28,
-  'SRV': 33,
-  'ANY': 255,
   'CAA': 257,
 } as any;
 

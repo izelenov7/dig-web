@@ -129,7 +129,7 @@ export const RecordTypeSelector: React.FC<RecordTypeSelectorProps> = ({
 
       {/* Быстрые выборы */}
       <div className="mt-3 flex flex-wrap gap-2">
-        {['A', 'AAAA', 'CNAME', 'MX', 'NS', 'PTR', 'SOA', 'TXT', 'CAA', 'SRV', 'ANY'].map((type) => (
+        {['A', 'AAAA', 'CNAME', 'MX', 'NS', 'TXT', 'CAA'].map((type) => (
           <button
             key={type}
             onClick={() => handleSelect(type)}

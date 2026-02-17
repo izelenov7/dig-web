@@ -1,3 +1,19 @@
+/**
+ * DNS Dig - Хук для выполнения DNS-запросов
+ * 
+ * Этот хук управляет логикой выполнения DNS-запросов:
+ * - Валидация и нормализация доменного имени
+ * - Конвертация IDN доменов в Punycode
+ * - Выполнение запроса к выбранному DNS провайдеру
+ * - Обработка опций (trace, whois, noRecursive)
+ * - Формирование результата запроса
+ * 
+ * Для добавления новой опции запроса:
+ * 1. Добавьте поле в DnsQueryOptions (types/options.ts)
+ * 2. Добавьте обработку в executeQuery()
+ * 3. Добавьте поле вывода в QueryResult (store/dnsStore.ts)
+ */
+
 import { useCallback } from 'react';
 import { useDnsStore } from '../store';
 import type { DnsRecordType } from '../types';

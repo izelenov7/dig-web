@@ -100,7 +100,7 @@ export const Documentation: React.FC = () => {
         <section id="record-types" className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 mb-8">
           <h3 className="text-2xl font-bold text-slate-900 mb-4">Типы DNS-записей</h3>
           <p className="text-slate-600 mb-6">
-            Сервис поддерживает 11 основных типов DNS-записей.
+            Сервис поддерживает 7 основных типов DNS-записей.
           </p>
 
           <div className="border border-slate-200 rounded-lg p-4">
@@ -111,11 +111,8 @@ export const Documentation: React.FC = () => {
               <li><strong>CNAME</strong> — Каноническое имя (псевдоним)</li>
               <li><strong>MX</strong> — Почтовый обменник для приёма email</li>
               <li><strong>NS</strong> — Авторитативные DNS-серверы домена</li>
-              <li><strong>PTR</strong> — Обратный DNS (IP → домен)</li>
-              <li><strong>SOA</strong> — Административная информация о зоне</li>
               <li><strong>TXT</strong> — Текстовая запись для SPF, DKIM, DMARC</li>
               <li><strong>CAA</strong> — Разрешённые центры выдачи сертификатов</li>
-              <li><strong>SRV</strong> — Хост и порт для сервисов (SIP, XMPP)</li>
             </ul>
           </div>
         </section>
@@ -154,6 +151,22 @@ export const Documentation: React.FC = () => {
               <tr className="border-b border-slate-100">
                 <td className="py-3 font-mono">AdGuard</td>
                 <td className="py-3">94.140.14.14 — с блокировкой рекламы</td>
+              </tr>
+              <tr className="border-b border-slate-100">
+                <td className="py-3 font-mono">OpenDNS</td>
+                <td className="py-3">208.67.222.222 — надёжный DNS от Cisco</td>
+              </tr>
+              <tr className="border-b border-slate-100">
+                <td className="py-3 font-mono">Яндекс.DNS</td>
+                <td className="py-3">77.88.8.8 — быстрый DNS от Яндекса</td>
+              </tr>
+              <tr className="border-b border-slate-100">
+                <td className="py-3 font-mono">NextDNS</td>
+                <td className="py-3">45.90.28.0 — настраиваемый облачный DNS</td>
+              </tr>
+              <tr className="border-b border-slate-100">
+                <td className="py-3 font-mono">Mullvad</td>
+                <td className="py-3">194.242.2.2 — приватный DNS без логов</td>
               </tr>
               <tr className="border-b border-slate-100">
                 <td className="py-3 font-mono">Authoritative</td>
@@ -250,11 +263,14 @@ Name Servers:
         {/* Форматы вывода */}
         <section id="output-formats" className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 mb-8">
           <h3 className="text-2xl font-bold text-slate-900 mb-4">Форматы вывода</h3>
-          
+          <p className="text-slate-600 mb-6">
+            Сервис поддерживает 5 форматов вывода результатов.
+          </p>
+
           <div className="space-y-6">
             <div>
               <h4 className="font-semibold text-slate-900 mb-2">BIND</h4>
-              <p className="text-slate-600 text-sm mb-2">Чистые записи без заголовков:</p>
+              <p className="text-slate-600 text-sm mb-2">Чистые записи без заголовков в формате: домен TTL IN TYPE данные</p>
               <div className="bg-slate-900 rounded-lg p-4">
                 <p className="text-green-400 font-mono text-sm">
                   google.com.		300	IN	A	142.250.50.46
@@ -264,7 +280,7 @@ Name Servers:
 
             <div>
               <h4 className="font-semibold text-slate-900 mb-2">Dig</h4>
-              <p className="text-slate-600 text-sm mb-2">Полный вывод с заголовками:</p>
+              <p className="text-slate-600 text-sm mb-2">Полный вывод с заголовками и секциями (QUESTION, ANSWER, AUTHORITY, ADDITIONAL)</p>
               <div className="bg-slate-900 rounded-lg p-4">
                 <p className="text-green-400 font-mono text-sm whitespace-pre-line">
 {`;; <<>> DiG 9.18.0 <<>> A google.com
@@ -278,11 +294,63 @@ google.com.		300	IN	A	142.250.50.46`}
             </div>
 
             <div>
-              <h4 className="font-semibold text-slate-900 mb-2">Копирование</h4>
-              <p className="text-slate-600 text-sm">
-                Используйте кнопку <strong>«Копировать»</strong> для копирования результата 
-                или <strong>«Сохранить в файл»</strong> для скачивания файла.
-              </p>
+              <h4 className="font-semibold text-slate-900 mb-2">Trace</h4>
+              <p className="text-slate-600 text-sm mb-2">Трассировка пути от корневых серверов до авторитативных (4 шага)</p>
+              <div className="bg-slate-900 rounded-lg p-4">
+                <p className="text-green-400 font-mono text-sm whitespace-pre-line">
+{`;; Step 1: Root Servers
+.	518400	IN	NS	a.root-servers.net.
+
+;; Step 2: TLD Servers for .com
+com.	172800	IN	NS	a.gtld-servers.net.
+
+;; Step 3: Authoritative Nameservers
+google.com.	172800	IN	NS	ns1.google.com.
+
+;; Step 4: Final Query
+google.com.	300	IN	A	142.250.50.46`}
+                </p>
+              </div>
+            </div>
+
+            <div>
+              <h4 className="font-semibold text-slate-900 mb-2">Whois</h4>
+              <p className="text-slate-600 text-sm mb-2">Регистрационная информация о домене (владелец, даты, статусы)</p>
+              <div className="bg-slate-900 rounded-lg p-4">
+                <p className="text-green-400 font-mono text-sm whitespace-pre-line">
+{`Domain Name: GOOGLE.COM
+Registrar: MarkMonitor Inc.
+Creation Date: 1997-09-15
+Registry Expiry Date: 2028-09-14
+Status: clientDeleteProhibited
+Name Servers:
+  NS1.GOOGLE.COM
+  NS2.GOOGLE.COM`}
+                </p>
+              </div>
+            </div>
+
+            <div>
+              <h4 className="font-semibold text-slate-900 mb-2">NoRec</h4>
+              <p className="text-slate-600 text-sm mb-2">Нерекурсивный запрос с пошаговым отображением делегирования</p>
+              <div className="bg-slate-900 rounded-lg p-4">
+                <p className="text-green-400 font-mono text-sm whitespace-pre-line">
+{`;; Step 1: Root Servers
+;; Step 2: TLD Servers for .com
+;; Step 3: Authoritative Nameservers
+;; Step 4: Final Query
+google.com.	300	IN	A	142.250.50.46`}
+                </p>
+              </div>
+            </div>
+
+            <div>
+              <h4 className="font-semibold text-slate-900 mb-2">Копирование и экспорт</h4>
+              <ul className="text-slate-600 text-sm space-y-1">
+                <li>• <strong>Копировать все</strong> — копирует все записи из секции Ответы</li>
+                <li>• <strong>Копировать (BIND/Dig/Trace/Whois/NoRec)</strong> — копирует выбранный формат</li>
+                <li>• <strong>Сохранить в файл</strong> — скачивает файл в формате BIND</li>
+              </ul>
             </div>
           </div>
         </section>

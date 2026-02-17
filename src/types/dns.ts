@@ -1,4 +1,16 @@
 /**
+ * DNS Dig - Типы DNS-записей
+ * 
+ * Этот файл определяет типы DNS-записей, поддерживаемые сервисом.
+ * 
+ * Для добавления нового типа DNS-записи:
+ * 1. Добавьте тип в DnsRecordType union type
+ * 2. Добавьте запись в DNS_RECORD_TYPES с описанием и RFC
+ * 3. Добавьте числовой код в DNS_TYPE_NUMBERS (lib/dnsService.ts)
+ * 4. При необходимости обновите быстрые кнопки в RecordTypeSelector.tsx
+ */
+
+/**
  * Типы DNS-записей
  * Поддерживаемые сервисом типы записей
  */
@@ -9,12 +21,8 @@ export type DnsRecordType =
   | 'CNAME'       // Каноническое имя
   | 'MX'          // Почтовый обменник
   | 'NS'          // Сервер имён
-  | 'PTR'         // Указатель
-  | 'SOA'         // Начало авторитета
   | 'TXT'         // Текстовая запись
-  | 'CAA'         // Certificate Authority Authorization
-  | 'SRV'         // Сервис
-  | 'ANY';        // Все доступные записи
+  | 'CAA';        // Certificate Authority Authorization
 
 /**
  * Информация о типе DNS-записи
@@ -37,12 +45,8 @@ export const DNS_RECORD_TYPES: DnsRecordTypeInfo[] = [
   { type: 'CNAME', name: 'CNAME', description: 'Каноническое имя (псевдоним)', rfc: 'RFC 1035', category: 'basic' },
   { type: 'MX', name: 'MX', description: 'Почтовый обменник для приёма email', rfc: 'RFC 1035', category: 'basic' },
   { type: 'NS', name: 'NS', description: 'Авторитативные DNS-серверы домена', rfc: 'RFC 1035', category: 'basic' },
-  { type: 'PTR', name: 'PTR', description: 'Обратный DNS (IP → домен)', rfc: 'RFC 1035', category: 'basic' },
-  { type: 'SOA', name: 'SOA', description: 'Административная информация о зоне', rfc: 'RFC 1035', category: 'basic' },
   { type: 'TXT', name: 'TXT', description: 'Текстовая запись для SPF, DKIM, DMARC', rfc: 'RFC 1035', category: 'basic' },
   { type: 'CAA', name: 'CAA', description: 'Разрешённые центры выдачи сертификатов', rfc: 'RFC 8659', category: 'basic' },
-  { type: 'SRV', name: 'SRV', description: 'Хост и порт для сервисов (SIP, XMPP)', rfc: 'RFC 2782', category: 'basic' },
-  { type: 'ANY', name: 'ANY', description: 'Все доступные записи домена', rfc: 'RFC 1035', category: 'basic' },
 ];
 
 /**
