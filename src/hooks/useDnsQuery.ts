@@ -109,21 +109,24 @@ export function useDnsQuery() {
       let whoisOutput = '';
       let nonRecursiveOutput = '';
       
+      // Выполняем все выбранные опции
       if (options.trace) {
         // Режим трассировки
         traceOutput = await traceDnsQuery(punycodeDomain, queryType);
-        response = await queryDns(punycodeDomain, queryType, dohProvider, queryOptions);
-      } else if (options.noRecursive) {
+      }
+      
+      if (options.noRecursive) {
         // Нерекурсивный запрос
         nonRecursiveOutput = await nonRecursiveQuery(punycodeDomain, queryType);
-        response = await queryDns(punycodeDomain, queryType, dohProvider, queryOptions);
-      } else if (options.whois) {
+      }
+      
+      if (options.whois) {
         // Whois-запрос - используем оригинальный домен для whois
         whoisOutput = await whoisQuery(normalizedDomain);
-        response = await queryDns(punycodeDomain, queryType, dohProvider, queryOptions);
-      } else {
-        response = await queryDns(punycodeDomain, queryType, dohProvider, queryOptions);
       }
+      
+      // Основной DNS запрос
+      response = await queryDns(punycodeDomain, queryType, dohProvider, queryOptions);
 
       const endTime = performance.now();
       const queryTime = Math.round(endTime - startTime);

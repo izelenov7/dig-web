@@ -31,19 +31,15 @@ export const Header: React.FC = () => {
           {/* Навигация */}
           <nav className="flex items-center gap-4">
             <a
-              href="#"
+              href="https://github.com/izelenov7/dig-web"
+              target="_blank"
+              rel="noopener noreferrer"
               className="text-sm text-slate-600 hover:text-slate-900 transition-colors"
             >
               Документация
             </a>
             <a
-              href="#"
-              className="text-sm text-slate-600 hover:text-slate-900 transition-colors"
-            >
-              API
-            </a>
-            <a
-              href="https://github.com"
+              href="https://github.com/izelenov7/dig-web"
               target="_blank"
               rel="noopener noreferrer"
               className="text-slate-400 hover:text-slate-600 transition-colors"

@@ -1,73 +1,233 @@
-# React + TypeScript + Vite
+# DNS Dig — Веб-инструмент для диагностики DNS-записей
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Профессиональный веб-сервис для проверки DNS-записей доменов с минималистичным дизайном и поддержкой всех типов записей.
 
-Currently, two official plugins are available:
+## 🚀 Возможности
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### Основные функции
+- **Проверка DNS-записей** — поддержка 60+ типов записей (A, AAAA, MX, NS, TXT, CNAME, SOA, CAA и др.)
+- **Множественные DNS-резолверы** — Cloudflare, Google, Quad9, AdGuard и другие
+- **Whois-запросы** — информация о регистрации домена
+- **Трассировка** — путь от корневых серверов до авторитативных
+- **Нерекурсивные запросы** — пошаговое отображение делегирования
+- **IDN поддержка** — работа с интернационализированными доменами (.рф и др.)
 
-## React Compiler
+### Опции запроса
+| Опция | Описание |
+|-------|----------|
+| **Показать команду** | Отображает выполняемую dig команду |
+| **Трассировка** | Показывает путь от корневых серверов |
+| **Whois** | Whois-запрос информации о домене |
+| **Без рекурсии** | Нерекурсивный запрос с пошаговым отображением |
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Форматы вывода
+- **BIND** — чистые записи в формате: `домен. TTL IN TYPE данные`
+- **Dig** — полный вывод с заголовками и секциями
+- **Trace** — трассировка пути запроса
+- **Whois** — регистрационная информация
+- **NoRec** — нерекурсивный запрос
 
-## Expanding the ESLint configuration
+## 🛠 Технологический стек
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- **Frontend**: React 18 + TypeScript
+- **Сборка**: Vite
+- **Стили**: Tailwind CSS v4
+- **State Management**: Zustand
+- **DNS API**: DNS-over-HTTPS (Cloudflare, Google, Quad9, AdGuard)
+- **Whois API**: RDAP + Nic.ru для .ru/.рф доменов
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## 📦 Установка
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+```bash
+# Клонирование репозитория
+git clone https://github.com/izelenov7/dig-web.git
+cd dig-web
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# Установка зависимостей
+npm install
+
+# Запуск dev-сервера
+npm run dev
+
+# Сборка для продакшена
+npm run build
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 📖 Использование
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Базовый запрос
+1. Введите доменное имя (например, `google.com`)
+2. Выберите тип записи (A, MX, NS и т.д.)
+3. Нажмите «Выполнить Dig»
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### Выбор DNS-резолвера
+В секции «DNS-резолверы» выберите:
+- **Default** — резолвер по умолчанию
+- **Preset** — предустановленные (Cloudflare, Google, Quad9, AdGuard)
+- **Authoritative** — авторитативные серверы домена
+- **Custom** — собственные серверы
+
+### Дополнительные опции
+Нажмите «Опции запроса» для включения:
+- Трассировки
+- Whois-запроса
+- Нерекурсивного запроса
+- Отображения команды
+
+### Копирование результатов
+- **Копировать все** — копирует все записи из секции
+- **Копировать (BIND/Dig/Trace/Whois/NoRec)** — копирует выбранный формат
+- **Сохранить в файл** — скачивает файл с записями
+
+## 📁 Структура проекта
+
 ```
+src/
+├── components/
+│   ├── dns/           # DNS-компоненты
+│   │   ├── Header.tsx
+│   │   ├── DomainInput.tsx
+│   │   ├── RecordTypeSelector.tsx
+│   │   ├── NameserverSelector.tsx
+│   │   ├── OptionsPanel.tsx
+│   │   ├── QueryOptionsDropdown.tsx
+│   │   ├── ResultsPanel.tsx
+│   │   └── SubmitButton.tsx
+│   └── ui/            # Базовые UI-компоненты
+├── hooks/             # React-хуки
+│   └── useDnsQuery.ts
+├── lib/               # Утилиты и сервисы
+│   ├── dnsService.ts  # DNS-over-HTTPS сервис
+│   ├── idn.ts         # IDN/Punycode конвертация
+│   ├── tldNameservers.ts # TLD серверы
+│   └── utils.ts       # Общие утилиты
+├── store/             # Zustand store
+│   └── dnsStore.ts
+├── types/             # TypeScript типы
+│   ├── dns.ts         # Типы DNS-записей
+│   ├── nameservers.ts # Типы резолверов
+│   └── options.ts     # Типы опций
+└── App.tsx            # Главный компонент
+```
+
+## 🔌 API
+
+### DNS-over-HTTPS эндпоинты
+
+| Провайдер | URL |
+|-----------|-----|
+| Cloudflare | `https://cloudflare-dns.com/dns-query` |
+| Google | `https://dns.google.com/resolve` |
+| Quad9 | `https://dns.quad9.net/dns-query` |
+| AdGuard | `https://dns.adguard.com/dns-query` |
+
+### Поддерживаемые типы записей
+
+**Основные**: A, AAAA, CNAME, MX, NS, PTR, SOA, TXT, ANY
+
+**Безопасность**: DNSKEY, DS, RRSIG, NSEC, NSEC3, TLSA, SMIMEA
+
+**Сервисы**: SRV, CAA, HTTPS, SVCB, CERT, OPENPGPKEY
+
+**Специализированные**: HINFO, NAPTR, LOC, RP, AFSDB, ALIAS
+
+**Устаревшие**: ISDN, X25, GPOS, WKS, RT, NSAP, KX, DNAME
+
+## 🌐 Поддержка IDN доменов
+
+Сервис автоматически конвертирует интернационализированные домены:
+- **Ввод**: `пример.рф`
+- **DNS запрос**: `xn--e1afmkfd.xn--p1ai`
+- **Whois**: `пример.рф` (оригинальный вид)
+
+### Поддерживаемые зоны
+- `.ru` — Россия
+- `.su` — Советский Союз
+- `.рф` (xn--p1ai) — Российская Федерация (кириллица)
+
+## 📝 Форматы вывода
+
+### BIND формат
+```
+example.com.		300	IN	A	93.184.216.34
+www.example.com.	300	IN	CNAME	example.com.
+```
+
+### Dig формат
+```
+; <<>> DiG 9.18.0 <<>> A example.com
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 12345
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1
+
+;; QUESTION SECTION:
+;example.com.			IN	A
+
+;; ANSWER SECTION:
+example.com.		300	IN	A	93.184.216.34
+
+;; Query time: 42 msec
+;; SERVER: Cloudflare (1.1.1.1)
+;; WHEN: Tue Feb 17 18:00:00 2026
+```
+
+### Whois формат
+```
+Domain Name: EXAMPLE.COM
+Registrar: Example Registrar, LLC
+Creation Date: 2020-01-01
+Updated Date: 2025-01-01
+Registry Expiry Date: 2027-01-01
+Status: clientTransferProhibited
+Name Servers:
+  ns1.example.com
+  ns2.example.com
+```
+
+## 🔧 Конфигурация
+
+### Переменные окружения
+Не требуются. Все запросы выполняются через публичные API.
+
+### Настройка Tailwind CSS
+Конфигурация находится в `src/index.css`:
+```css
+@import "tailwindcss";
+
+@theme {
+  --color-primary-50: #eff6ff;
+  --color-primary-100: #dbeafe;
+  /* ... другие цвета */
+}
+```
+
+## 🤝 Вклад в проект
+
+1. Fork репозитория
+2. Создайте feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit изменений (`git commit -m 'Add amazing feature'`)
+4. Push в branch (`git push origin feature/amazing-feature`)
+5. Откройте Pull Request
+
+## 📄 Лицензия
+
+MIT License — см. файл LICENSE для деталей.
+
+## 👤 Автор
+
+**izelenov7**
+
+- GitHub: [@izelenov7](https://github.com/izelenov7)
+- Репозиторий: [github.com/izelenov7/dig-web](https://github.com/izelenov7/dig-web)
+
+## 🙏 Благодарности
+
+- [Cloudflare](https://cloudflare.com/) — DNS-over-HTTPS API
+- [Google](https://google.com/) — Public DNS API
+- [RIPE NCC](https://www.ripe.net/) — RDAP сервис
+- [NIC.RU](https://www.nic.ru/) — Whois для .ru доменов
+
+## 📞 Контакты
+
+Для вопросов и предложений откройте issue на GitHub или напишите напрямую.
