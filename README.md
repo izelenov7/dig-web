@@ -155,16 +155,16 @@ google.com.		300	IN	A	142.250.50.46
 ;; SERVER: Cloudflare (1.1.1.1)
 ```
 
-### Trace формат
+### NoRec формат (нерекурсивный запрос)
 ```
 ;; Step 1: Root Servers
-.	518400	IN	NS	a.root-servers.net.
+;; Querying root servers for TLD nameservers...
 
 ;; Step 2: TLD Servers for .com
-com.	172800	IN	NS	a.gtld-servers.net.
+;; Querying .com TLD nameservers...
 
 ;; Step 3: Authoritative Nameservers
-google.com.	172800	IN	NS	ns1.google.com.
+;; Querying authoritative nameservers for google.com...
 
 ;; Step 4: Final Query
 google.com.	300	IN	A	142.250.50.46
@@ -204,18 +204,13 @@ MIT License — см. файл LICENSE для деталей.
 **izelenov7**
 
 - GitHub: [@izelenov7](https://github.com/izelenov7)
+- Telegram: [@igorqx](https://t.me/igorqx)
 - VK: [igorqx](https://vk.com/igorqx)
 - Репозиторий: [github.com/izelenov7/dig-web](https://github.com/izelenov7/dig-web)
-
-## 🙏 Благодарности
-
-- [Cloudflare](https://cloudflare.com/) — DNS-over-HTTPS API
-- [Google](https://google.com/) — Public DNS API
-- [RIPE NCC](https://www.ripe.net/) — RDAP сервис
-- [NIC.RU](https://www.nic.ru/) — Whois для .ru доменов
 
 ## 📞 Контакты
 
 Для вопросов и предложений:
-- VK: [https://vk.com/igorqx](https://vk.com/igorqx)
+- Telegram: [@igorqx](https://t.me/igorqx)
+- VK: [igorqx](https://vk.com/igorqx)
 - GitHub Issues: [github.com/izelenov7/dig-web/issues](https://github.com/izelenov7/dig-web/issues)
