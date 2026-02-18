@@ -7,7 +7,7 @@ import { Documentation } from './components/Documentation.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <BrowserRouter>
+    <BrowserRouter basename="/dig-web">
       <Routes>
         <Route path="/" element={<App />} />
         <Route path="/docs" element={<Documentation />} />

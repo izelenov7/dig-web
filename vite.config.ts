@@ -9,6 +9,9 @@ import react from '@vitejs/plugin-react'
  * - Включено tree-shaking
  * - Включено сжатие gzip/brotli
  * 
+ * Для деплоя на GitHub Pages:
+ * - base: '/dig-web/' (имя репозитория)
+ * 
  * Для деплоя выполните:
  * npm run build
  * 
@@ -16,6 +19,7 @@ import react from '@vitejs/plugin-react'
  */
 export default defineConfig({
   plugins: [react()],
+  base: '/dig-web/',
   build: {
     // Включаем минификацию (esbuild быстрее terser)
     minify: 'esbuild',
