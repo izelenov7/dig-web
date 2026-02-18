@@ -44,7 +44,7 @@ export const SubmitButton: React.FC<SubmitButtonProps> = ({ onSubmit }) => {
           </svg>
         }
       >
-        {isLoading ? 'Запрос...' : 'Выполнить Dig'}
+        {isLoading ? 'Запрос...' : 'Выполнить запрос'}
       </Button>
 
       <Button

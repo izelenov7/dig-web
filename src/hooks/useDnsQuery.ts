@@ -1,11 +1,11 @@
 /**
- * DNS Dig - Хук для выполнения DNS-запросов
+ * DNS Check - Хук для выполнения DNS-запросов
  * 
  * Этот хук управляет логикой выполнения DNS-запросов:
  * - Валидация и нормализация доменного имени
  * - Конвертация IDN доменов в Punycode
  * - Выполнение запроса к выбранному DNS провайдеру
- * - Обработка опций (trace, whois, noRecursive)
+ * - Обработка опций (noRecursive)
  * - Формирование результата запроса
  * 
  * Для добавления новой опции запроса:
@@ -23,8 +23,6 @@ import {
   formatDohResponse,
   formatRecordsBindStyle,
   formatDigFullOutput,
-  traceDnsQuery,
-  whoisQuery,
   nonRecursiveQuery,
   DNS_STATUS,
   type DohResponse,
@@ -99,21 +97,20 @@ export function useDnsQuery() {
       authoritativeNameservers = await getAuthoritativeNameservers(punycodeDomain);
 
       // Определение провайдера на основе выбранного пресета
-      let dohProvider: 'cloudflare' | 'google' | 'quad9' | 'adguard' = 'cloudflare';
+      let dohProvider: 'cloudflare' | 'google' = 'cloudflare';
       if (nameserverConfig.mode === 'preset' && nameserverConfig.presetId) {
         const preset = NAMESERVER_PRESETS.find(p => p.id === nameserverConfig.presetId);
         if (preset?.dohProvider) {
           dohProvider = preset.dohProvider;
           selectedProvider = preset.name + ' (' + preset.servers[0] + ')';
         } else if (preset) {
-          // Для пресетов без DoH (Яндекс, OpenDNS и др.) используем Cloudflare по умолчанию
+          // Для пресетов без DoH используем Cloudflare по умолчанию
           selectedProvider = preset.name + ' (' + preset.servers[0] + ')';
         }
       }
 
       // Подготовка опций запроса
       const queryOptions = {
-        trace: options.trace,
         noRecursive: options.noRecursive,
       };
 
@@ -123,26 +120,14 @@ export function useDnsQuery() {
       }
 
       // Выполнение запроса к выбранному провайдеру - используем punycode
-      let traceOutput = '';
-      let whoisOutput = '';
       let nonRecursiveOutput = '';
-      
-      // Выполняем все выбранные опции
-      if (options.trace) {
-        // Режим трассировки
-        traceOutput = await traceDnsQuery(punycodeDomain, queryType);
-      }
-      
+
+      // Выполняем опции
       if (options.noRecursive) {
         // Нерекурсивный запрос
         nonRecursiveOutput = await nonRecursiveQuery(punycodeDomain, queryType);
       }
-      
-      if (options.whois) {
-        // Whois-запрос - используем оригинальный домен для whois
-        whoisOutput = await whoisQuery(normalizedDomain);
-      }
-      
+
       // Основной DNS запрос
       response = await queryDns(punycodeDomain, queryType, dohProvider, queryOptions);
 
@@ -202,8 +187,6 @@ export function useDnsQuery() {
           queryTime,
           status: DNS_STATUS[response.Status] || `UNKNOWN (${response.Status})`,
         }),
-        traceOutput: traceOutput || undefined,
-        whoisOutput: whoisOutput || undefined,
         nonRecursiveOutput: nonRecursiveOutput || undefined,
         fullResponse: response,
       };

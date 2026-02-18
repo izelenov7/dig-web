@@ -66,8 +66,6 @@ export const Documentation: React.FC = () => {
             <li><a href="#record-types" className="text-primary-600 hover:text-primary-700 hover:underline">Типы DNS-записей</a></li>
             <li><a href="#nameservers" className="text-primary-600 hover:text-primary-700 hover:underline">Выбор DNS-резолвера</a></li>
             <li><a href="#query-options" className="text-primary-600 hover:text-primary-700 hover:underline">Опции запроса</a></li>
-            <li><a href="#trace" className="text-primary-600 hover:text-primary-700 hover:underline">Трассировка (Trace)</a></li>
-            <li><a href="#whois" className="text-primary-600 hover:text-primary-700 hover:underline">Whois-запрос</a></li>
             <li><a href="#no-recursive" className="text-primary-600 hover:text-primary-700 hover:underline">Нерекурсивный запрос</a></li>
             <li><a href="#output-formats" className="text-primary-600 hover:text-primary-700 hover:underline">Форматы вывода</a></li>
             <li><a href="#idn" className="text-primary-600 hover:text-primary-700 hover:underline">Поддержка IDN (.рф)</a></li>
@@ -194,26 +192,10 @@ export const Documentation: React.FC = () => {
             </div>
 
             <div className="border border-slate-200 rounded-lg p-4">
-              <h4 className="font-semibold text-slate-900 mb-2">☑ Трассировка</h4>
-              <p className="text-sm text-slate-600">
-                Показывает полный путь DNS-запроса от корневых серверов до авторитативных серверов домена.
-                Результат отображается в формате Trace с пошаговым описанием каждого этапа.
-              </p>
-            </div>
-
-            <div className="border border-slate-200 rounded-lg p-4">
-              <h4 className="font-semibold text-slate-900 mb-2">☑ Whois</h4>
-              <p className="text-sm text-slate-600">
-                Выполняет Whois-запрос для получения регистрационной информации о домене.
-                Показывает данные о регистраторе, датах создания и окончания регистрации, статусы домена.
-              </p>
-            </div>
-
-            <div className="border border-slate-200 rounded-lg p-4">
               <h4 className="font-semibold text-slate-900 mb-2">☑ Без рекурсии</h4>
               <p className="text-sm text-slate-600">
                 Выполняет нерекурсивный запрос, показывая пошаговый путь делегирования.
-                В отличие от трассировки, каждый шаг выполняется отдельно без кэширования.
+                Каждый шаг выполняется отдельно без кэширования.
               </p>
             </div>
           </div>

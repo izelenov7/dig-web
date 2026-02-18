@@ -7,7 +7,7 @@ export interface NameserverPreset {
   description: string;
   servers: string[];
   country?: string;
-  dohProvider?: 'cloudflare' | 'google' | 'quad9' | 'adguard';
+  dohProvider?: 'cloudflare' | 'google';
 }
 
 export const NAMESERVER_PRESETS: NameserverPreset[] = [
@@ -26,22 +26,6 @@ export const NAMESERVER_PRESETS: NameserverPreset[] = [
     servers: ['8.8.8.8', '8.8.4.4'],
     country: 'US',
     dohProvider: 'google',
-  },
-  {
-    id: 'quad9',
-    name: 'Quad9',
-    description: 'Безопасный DNS с блокировкой угроз',
-    servers: ['9.9.9.9', '149.112.112.112'],
-    country: 'CH',
-    dohProvider: 'quad9',
-  },
-  {
-    id: 'adguard',
-    name: 'AdGuard',
-    description: 'DNS с блокировкой рекламы',
-    servers: ['94.140.14.14', '94.140.15.15'],
-    country: 'CY',
-    dohProvider: 'adguard',
   },
   {
     id: 'opendns',

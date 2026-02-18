@@ -72,8 +72,6 @@ export interface QueryResult {
   rawOutput: string;
   bindOutput: string;
   digFullOutput: string;
-  traceOutput?: string;
-  whoisOutput?: string;
   nonRecursiveOutput?: string;
   fullResponse: DohResponse;
 }

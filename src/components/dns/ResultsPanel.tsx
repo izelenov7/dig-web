@@ -18,7 +18,7 @@ export const ResultsPanel: React.FC<ResultsPanelProps> = ({
   const stats = useDnsStore((state) => state.result?.stats);
 
   const [copied, setCopied] = useState(false);
-  const [copyFormat, setCopyFormat] = useState<'bind' | 'dig' | 'trace' | 'whois' | 'noRecursive'>('bind');
+  const [copyFormat, setCopyFormat] = useState<'bind' | 'dig' | 'noRecursive'>('bind');
   const [answersCopied, setAnswersCopied] = useState(false);
   const [commandCopied, setCommandCopied] = useState(false);
 
@@ -48,15 +48,11 @@ export const ResultsPanel: React.FC<ResultsPanelProps> = ({
     }
   }, [digCommand]);
 
-  // Копирование результата (BIND/Dig/Trace/Whois/NoRecursive)
+  // Копирование результата (BIND/Dig/NoRec)
   const handleCopy = useCallback(async () => {
     let textToCopy = '';
     if (copyFormat === 'bind') {
       textToCopy = result?.bindOutput || '';
-    } else if (copyFormat === 'trace' && result?.traceOutput) {
-      textToCopy = result.traceOutput;
-    } else if (copyFormat === 'whois' && result?.whoisOutput) {
-      textToCopy = result.whoisOutput;
     } else if (copyFormat === 'noRecursive' && result?.nonRecursiveOutput) {
       textToCopy = result.nonRecursiveOutput;
     } else {
@@ -220,7 +216,7 @@ export const ResultsPanel: React.FC<ResultsPanelProps> = ({
 
   // Состояние успеха
   if (status === 'success' && result) {
-    const { stats, answers, authority, additional, bindOutput, digFullOutput, traceOutput, whoisOutput, nonRecursiveOutput } = result;
+    const { stats, answers, authority, additional, bindOutput, digFullOutput, nonRecursiveOutput } = result;
 
     return (
       <div className="space-y-4">
@@ -401,32 +397,6 @@ export const ResultsPanel: React.FC<ResultsPanelProps> = ({
               >
                 Dig
               </button>
-              {traceOutput && (
-                <button
-                  onClick={() => setCopyFormat('trace')}
-                  className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
-                    copyFormat === 'trace'
-                      ? 'bg-primary-100 text-primary-700'
-                      : 'text-slate-600 hover:bg-slate-100'
-                  }`}
-                  title="Трассировка: путь от корневых серверов"
-                >
-                  Trace
-                </button>
-              )}
-              {whoisOutput && (
-                <button
-                  onClick={() => setCopyFormat('whois')}
-                  className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
-                    copyFormat === 'whois'
-                      ? 'bg-primary-100 text-primary-700'
-                      : 'text-slate-600 hover:bg-slate-100'
-                  }`}
-                  title="Whois: информация о домене"
-                >
-                  Whois
-                </button>
-              )}
               {nonRecursiveOutput && (
                 <button
                   onClick={() => setCopyFormat('noRecursive')}
@@ -457,7 +427,7 @@ export const ResultsPanel: React.FC<ResultsPanelProps> = ({
                 )
               }
             >
-              {copied ? 'Скопировано!' : `Копировать (${copyFormat === 'bind' ? 'BIND' : copyFormat === 'trace' ? 'Trace' : copyFormat === 'whois' ? 'Whois' : copyFormat === 'noRecursive' ? 'NoRec' : 'Dig'})`}
+              {copied ? 'Скопировано!' : `Копировать (${copyFormat === 'bind' ? 'BIND' : copyFormat === 'noRecursive' ? 'NoRec' : 'Dig'})`}
             </Button>
           </div>
           
@@ -482,32 +452,6 @@ export const ResultsPanel: React.FC<ResultsPanelProps> = ({
               </div>
               <pre className="p-4 text-sm font-mono text-green-400 overflow-x-auto max-h-96 overflow-y-auto">
                 {digFullOutput || 'Нет записей'}
-              </pre>
-            </div>
-          )}
-
-          {/* Trace формат - трассировка */}
-          {copyFormat === 'trace' && traceOutput && (
-            <div className="bg-slate-900 rounded-lg overflow-hidden">
-              <div className="px-4 py-2 bg-slate-800 border-b border-slate-700 flex items-center justify-between">
-                <span className="text-xs text-slate-400 font-mono">Trace-стиль (трассировка)</span>
-                <span className="text-xs text-slate-500">Путь от корневых серверов</span>
-              </div>
-              <pre className="p-4 text-sm font-mono text-green-400 overflow-x-auto max-h-96 overflow-y-auto">
-                {traceOutput}
-              </pre>
-            </div>
-          )}
-
-          {/* Whois формат - информация о домене */}
-          {copyFormat === 'whois' && whoisOutput && (
-            <div className="bg-slate-900 rounded-lg overflow-hidden">
-              <div className="px-4 py-2 bg-slate-800 border-b border-slate-700 flex items-center justify-between">
-                <span className="text-xs text-slate-400 font-mono">Whois-стиль (информация о домене)</span>
-                <span className="text-xs text-slate-500">Регистрационные данные</span>
-              </div>
-              <pre className="p-4 text-sm font-mono text-green-400 overflow-x-auto max-h-96 overflow-y-auto">
-                {whoisOutput}
               </pre>
             </div>
           )}

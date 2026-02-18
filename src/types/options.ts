@@ -6,8 +6,6 @@ export interface DnsQueryOptions {
   showCommand: boolean;
 
   // Отладка
-  trace: boolean;
-  whois: boolean;
   noRecursive: boolean;
 }
 
@@ -16,8 +14,6 @@ export interface DnsQueryOptions {
  */
 export const DEFAULT_QUERY_OPTIONS: DnsQueryOptions = {
   showCommand: false,
-  trace: false,
-  whois: false,
   noRecursive: false,
 };
 
@@ -42,21 +38,9 @@ export const QUERY_OPTIONS: QueryOptionDefinition[] = [
 
   // Отладка
   {
-    key: 'trace',
-    label: 'Трассировка',
-    description: 'Трассировка пути запроса',
-    group: 'debug',
-  },
-  {
-    key: 'whois',
-    label: 'Whois',
-    description: 'Whois-запрос информации о домене',
-    group: 'debug',
-  },
-  {
     key: 'noRecursive',
     label: 'Без рекурсии',
-    description: 'Нерекурсивный запрос от корневых серверов',
+    description: 'Нерекурсивный запрос с пошаговым отображением',
     group: 'debug',
   },
 ];

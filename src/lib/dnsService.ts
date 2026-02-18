@@ -1,14 +1,11 @@
 /**
- * DNS Dig - DNS-over-HTTPS сервис для выполнения DNS-запросов
+ * DNS Check - DNS-over-HTTPS сервис для выполнения DNS-запросов
  * 
- * Этот файл содержит функции для выполнения DNS-запросов через публичные DoH API.
- * Поддерживаемые провайдеры: Cloudflare, Google, Quad9, AdGuard.
+ * Использует публичные DoH API: Cloudflare, Google
  * 
  * Основные функции:
  * - queryDnsWithProvider() - выполнение DNS запроса к выбранному провайдеру
- * - traceDnsQuery() - трассировка пути от корневых серверов
- * - whoisQuery() - whois запрос информации о домене
- * - nonRecursiveQuery() - нерекурсивный запрос
+ * - nonRecursiveQuery() - нерекурсивный запрос с пошаговым отображением
  * 
  * Для добавления нового DNS провайдера:
  * 1. Добавьте эндпоинт в DOH_ENDPOINTS
@@ -24,8 +21,6 @@ import type { DnsRecordType } from '../types';
 export const DOH_ENDPOINTS = {
   cloudflare: { url: 'https://cloudflare-dns.com/dns-query', name: 'Cloudflare (1.1.1.1)' },
   google: { url: 'https://dns.google.com/resolve', name: 'Google (8.8.8.8)' },
-  quad9: { url: 'https://dns.quad9.net/dns-query', name: 'Quad9 (9.9.9.9)' },
-  adguard: { url: 'https://dns.adguard.com/dns-query', name: 'AdGuard (94.140.14.14)' },
 } as const;
 
 export type DohProvider = keyof typeof DOH_ENDPOINTS;
@@ -91,7 +86,7 @@ const DNS_TYPE_NAMES: Record<number, string> = Object.entries(DNS_TYPE_NUMBERS).
  * Получение числового кода типа записи
  */
 export function getDnsTypeNumber(type: DnsRecordType): number {
-  return DNS_TYPE_NUMBERS[type] || 255; // ANY по умолчанию
+  return DNS_TYPE_NUMBERS[type] || 255;
 }
 
 /**
@@ -192,7 +187,7 @@ export function formatRecordsBindStyle(
   additional: Array<{ name: string; type: number; TTL: number; data: string }> = []
 ): string {
   const lines: string[] = [];
-  
+
   // Ответы
   if (answers && answers.length > 0) {
     answers.forEach((answer) => {
@@ -201,7 +196,7 @@ export function formatRecordsBindStyle(
       lines.push(`${answer.name}.\t\t${answer.TTL}\tIN\t${typeName}\t${data}`);
     });
   }
-  
+
   // Авторитетность
   if (authority && authority.length > 0) {
     authority.forEach((auth) => {
@@ -209,7 +204,7 @@ export function formatRecordsBindStyle(
       lines.push(`${auth.name}.\t\t${auth.TTL}\tIN\t${typeName}\t${auth.data}`);
     });
   }
-  
+
   // Дополнительно
   if (additional && additional.length > 0) {
     additional.forEach((add) => {
@@ -307,367 +302,74 @@ export function formatDigFullOutput(
 }
 
 /**
- * Трассировка DNS запроса (аналог dig +trace)
- * Показывает путь от корневых серверов до авторитативных
+ * Выполнение DNS-запроса через DoH с опциями
  */
-export async function traceDnsQuery(
+export interface DnsQueryOptions {
+  noRecursive?: boolean;
+}
+
+export async function queryDnsWithProvider(
   domain: string,
-  type: DnsRecordType
-): Promise<string> {
-  const lines: string[] = [];
-  const now = new Date().toLocaleString('ru-RU');
-
-  lines.push(`; <<>> DiG 9.18.0 <<>> ${type} ${domain} +trace`);
-  lines.push(`;; global options: +cmd`);
-  lines.push('');
-
-  // 1. Запрос к корневым серверам
-  lines.push(`;; Step 1: Root Servers`);
-  lines.push(`;; Querying root servers for TLD nameservers...`);
-  lines.push('');
-
-  // Реальные корневые серверы
-  const rootServers = [
-    'a.root-servers.net.',
-    'b.root-servers.net.',
-    'c.root-servers.net.',
-    'd.root-servers.net.',
-    'e.root-servers.net.',
-  ];
-
-  rootServers.forEach((server) => {
-    lines.push(`.	518400	IN	NS	${server}`);
-  });
-  lines.push('');
-
-  // 2. Получаем TLD серверы
-  const tldParts = domain.split('.');
-  const tld = tldParts.length > 1 ? tldParts[tldParts.length - 1].toLowerCase() : '';
-
-  if (tld) {
-    lines.push(`;; Received ${Math.floor(Math.random() * 100 + 100)} bytes`);
-    lines.push(`;; SERVER: 198.41.0.4#53(198.41.0.4) (a.root-servers.net)`);
-    lines.push(`;; WHEN: ${now}`);
-    lines.push('');
-
-    // Реальные TLD серверы для разных зон
-    let tldServers: Array<{ name: string; ip: string }> = [];
-    
-    if (tld === 'ru' || tld === 'xn--p1ai' /* .рф */) {
-      tldServers = [
-        { name: 'a.ns.ru', ip: '193.232.128.6' },
-        { name: 'b.ns.ru', ip: '194.85.252.62' },
-        { name: 'd.ns.ru', ip: '194.190.124.17' },
-        { name: 'e.ns.ru', ip: '193.232.142.17' },
-        { name: 'f.ns.ru', ip: '193.232.156.17' },
-      ];
-    } else if (tld === 'com' || tld === 'net') {
-      tldServers = [
-        { name: 'a.gtld-servers.net.', ip: '192.5.6.30' },
-        { name: 'b.gtld-servers.net.', ip: '192.33.14.30' },
-        { name: 'c.gtld-servers.net.', ip: '192.26.92.30' },
-        { name: 'd.gtld-servers.net.', ip: '192.31.80.30' },
-        { name: 'e.gtld-servers.net.', ip: '192.12.94.30' },
-      ];
-    } else if (tld === 'org') {
-      tldServers = [
-        { name: 'a0.org.afilias-nst.info.', ip: '199.19.54.1' },
-        { name: 'a2.org.afilias-nst.info.', ip: '199.19.56.1' },
-        { name: 'b0.org.afilias-nst.org.', ip: '199.19.57.1' },
-      ];
-    } else if (tld === 'io') {
-      tldServers = [
-        { name: 'a0.nic.io.', ip: '199.249.112.1' },
-        { name: 'a2.nic.io.', ip: '199.249.114.1' },
-        { name: 'b0.nic.io.', ip: '199.249.116.1' },
-      ];
-    } else {
-      // Fallback для других TLD
-      tldServers = [
-        { name: `a.${tld}-servers.net.`, ip: '192.5.6.30' },
-        { name: `b.${tld}-servers.net.`, ip: '192.33.14.30' },
-        { name: `c.${tld}-servers.net.`, ip: '192.26.92.30' },
-      ];
-    }
-
-    lines.push(`;; Step 2: TLD Servers for .${tld}`);
-    lines.push(`;; Querying .${tld} TLD nameservers...`);
-    lines.push('');
-
-    tldServers.forEach((server) => {
-      lines.push(`${tld}.\t172800	IN	NS	${server.name}`);
-    });
-    lines.push('');
-
-    // 3. Получаем авторитативные серверы домена
-    lines.push(`;; Received ${Math.floor(Math.random() * 100 + 100)} bytes`);
-    lines.push(`;; SERVER: ${tldServers[0].ip}#53(${tldServers[0].ip}) (${tldServers[0].name})`);
-    lines.push(`;; WHEN: ${now}`);
-    lines.push('');
-
-    try {
-      const nsResponse = await queryDnsWithProvider(domain, 'NS', 'cloudflare');
-
-      if (nsResponse.Answer && nsResponse.Answer.length > 0) {
-        lines.push(`;; Step 3: Authoritative Nameservers`);
-        lines.push(`;; Querying authoritative nameservers for ${domain}...`);
-        lines.push('');
-
-        nsResponse.Answer.forEach((answer) => {
-          const typeName = getDnsTypeName(answer.type);
-          lines.push(`${answer.name}.\t${answer.TTL}\tIN\t${typeName}\t${answer.data}`);
-        });
-        lines.push('');
-
-        // 4. Финальный запрос к авторитативному серверу
-        const finalResponse = await queryDnsWithProvider(domain, type, 'cloudflare');
-
-        if (finalResponse.Answer && finalResponse.Answer.length > 0) {
-          lines.push(`;; Step 4: Final Query`);
-          lines.push(`;; Received ${Math.floor(Math.random() * 100 + 100)} bytes`);
-          const authServer = nsResponse.Answer?.[0]?.data.replace(/\.$/, '') || 'ns1.' + domain;
-          lines.push(`;; SERVER: ${authServer}`);
-          lines.push(`;; WHEN: ${now}`);
-          lines.push('');
-
-          lines.push(`;; ANSWER SECTION:`);
-          finalResponse.Answer.forEach((answer) => {
-            const typeName = getDnsTypeName(answer.type);
-            lines.push(`${answer.name}.\t\t${answer.TTL}\tIN\t${typeName}\t${answer.data}`);
-          });
-          lines.push('');
-
-          if (finalResponse.Authority && finalResponse.Authority.length > 0) {
-            lines.push(`;; AUTHORITY SECTION:`);
-            finalResponse.Authority.forEach((answer) => {
-              const typeName = getDnsTypeName(answer.type);
-              lines.push(`${answer.name}.\t\t${answer.TTL}\tIN\t${typeName}\t${answer.data}`);
-            });
-            lines.push('');
-          }
-
-          if (finalResponse.Additional && finalResponse.Additional.length > 0) {
-            lines.push(`;; ADDITIONAL SECTION:`);
-            finalResponse.Additional.forEach((answer) => {
-              const typeName = getDnsTypeName(answer.type);
-              lines.push(`${answer.name}.\t\t${answer.TTL}\tIN\t${typeName}\t${answer.data}`);
-            });
-            lines.push('');
-          }
-
-          lines.push(`;; Query time: ${Math.floor(Math.random() * 100)} msec`);
-          lines.push(`;; SERVER: ${authServer}`);
-          lines.push(`;; WHEN: ${now}`);
-        }
-      } else {
-        lines.push(`;; No NS records found for ${domain}`);
-      }
-    } catch (error) {
-      lines.push(`;; Error during trace: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  }
-
-  return lines.join('\n');
-}
-
-/**
- * Whois-запрос информации о домене
- * Использует nic.ru/whois для всех доменных зон
- */
-export async function whoisQuery(domain: string): Promise<string> {
-  // Для всех доменов используем nic.ru whois
-  return await whoisNicRuQuery(domain);
-}
-
-/**
- * Whois-запрос через nic.ru/whois
- * Этот сервис предоставляет информацию для большинства доменных зон
- */
-async function whoisNicRuQuery(domain: string): Promise<string> {
-  const lines: string[] = [];
-  const now = new Date().toLocaleString('ru-RU');
-
-  lines.push(`% Whois query for ${domain}`);
-  lines.push(`% Query time: ${now}`);
-  lines.push('');
-
-  try {
-    // Запрашиваем страницу whois через nic.ru
-    const response = await fetch(`https://www.nic.ru/whois/?domain=${encodeURIComponent(domain)}`, {
-      method: 'GET',
-      headers: {
-        'Accept': 'text/html',
-      },
-    });
-
-    if (response.ok) {
-      const html = await response.text();
-      const parsed = parseNicRuWhois(html, domain);
-      if (parsed && parsed.length > 8) {
-        return parsed.join('\n');
-      }
-    }
-  } catch (error) {
-    console.error('NIC.RU whois error:', error);
-  }
-
-  // Если не удалось получить данные - сообщаем об этом
-  lines.push('Whois data not available for this domain.');
-  lines.push('');
-  lines.push('Possible reasons:');
-  lines.push('- Domain does not exist');
-  lines.push('- Whois information is private/protected');
-  lines.push('- Registrar does not provide public whois data');
-  lines.push('');
-  lines.push('Try checking the domain registration through your registrar directly.');
+  type: DnsRecordType,
+  provider: DohProvider = 'cloudflare',
+  _options?: DnsQueryOptions
+): Promise<DohResponse> {
+  const endpoint = DOH_ENDPOINTS[provider];
+  const typeNum = getDnsTypeNumber(type);
+  let url = `${endpoint.url}?name=${encodeURIComponent(domain)}&type=${typeNum}`;
   
-  return lines.join('\n');
+  const headers: HeadersInit = {
+    'Accept': 'application/dns-json',
+  };
+  
+  const response = await fetch(url, {
+    method: 'GET',
+    headers,
+  });
+  
+  if (!response.ok) {
+    throw new Error(`${endpoint.name} error: ${response.status} ${response.statusText}`);
+  }
+  
+  return response.json();
 }
 
 /**
- * Парсинг ответа от nic.ru
- * Извлекает whois данные из HTML страницы
- * Возвращает пустой массив если данные не найдены или невалидны
+ * Выполнение DNS-запроса с автоматическим переключением провайдеров
  */
-function parseNicRuWhois(html: string, _domain: string): string[] {
-  const lines: string[] = [];
+export async function queryDns(
+  domain: string,
+  type: DnsRecordType,
+  provider: DohProvider = 'cloudflare',
+  options?: DnsQueryOptions
+): Promise<DohResponse> {
+  return await queryDnsWithProvider(domain, type, provider, options);
+}
 
-  // Извлекаем текст из HTML
-  const textContent = html.replace(/<[^>]*>/g, '\n');
+/**
+ * Получение авторитативных NS серверов для домена
+ */
+export async function getAuthoritativeNameservers(domain: string): Promise<string[]> {
+  try {
+    const nsResponse = await queryDnsWithProvider(domain, 'NS', 'cloudflare');
 
-  // Ищем паттерны whois данных
-  let foundData = false;
-
-  // Domain Name
-  const domainPatterns = [
-    /domain:\s*([^\n]+)/i,
-    /Domain Name:\s*([^\n]+)/i,
-  ];
-  for (const pattern of domainPatterns) {
-    const match = textContent.match(pattern);
-    if (match) {
-      const domainName = match[1].trim().toUpperCase();
-      // Проверяем что домен не шаблонный
-      if (domainName && domainName.length > 3) {
-        lines.push(`Domain Name: ${domainName}`);
-        foundData = true;
-        break;
+    if (!nsResponse.Answer || nsResponse.Answer.length === 0) {
+      if (nsResponse.Authority && nsResponse.Authority.length > 0) {
+        const nsRecords = nsResponse.Authority.filter(a => a.type === 2);
+        return nsRecords.map(r => r.data.replace(/\.$/, ''));
       }
+      return [];
     }
-  }
 
-  // Registrar - улучшенный паттерн для nic.ru
-  const registrarPatterns = [
-    /registrar:\s*([^\n]+)/i,
-    /Registrar:\s*([^\n]+)/i,
-    /Registrar Name:\s*([^\n]+)/i,
-  ];
-  for (const pattern of registrarPatterns) {
-    const match = textContent.match(pattern);
-    if (match) {
-      const registrar = match[1].trim();
-      // Пропускаем шаблонные и пустые значения
-      if (registrar && 
-          registrar.length > 3 && 
-          !registrar.includes('Example Registrar') && 
-          !registrar.includes('Unknown') &&
-          !registrar.includes('REGRU-RU')) {
-        lines.push(`Registrar: ${registrar}`);
-        foundData = true;
-        break;
-      }
-    }
-  }
+    const nameservers = nsResponse.Answer
+      .filter(a => a.type === 2)
+      .map(a => a.data.replace(/\.$/, ''));
 
-  // Dates
-  const createdMatch = textContent.match(/created:\s*([^\n]+)/i);
-  if (createdMatch) {
-    const created = createdMatch[1].trim();
-    // Проверяем что дата не шаблонная
-    if (created && /^\d{4}-\d{2}-\d{2}/.test(created)) {
-      lines.push(`Creation Date: ${created}`);
-      foundData = true;
-    }
+    return nameservers;
+  } catch (error) {
+    console.error('Failed to get authoritative nameservers:', error);
+    return [];
   }
-
-  const paidMatch = textContent.match(/paid-till:\s*([^\n]+)/i);
-  if (paidMatch) {
-    const paid = paidMatch[1].trim();
-    // Проверяем что дата не шаблонная
-    if (paid && /^\d{4}-\d{2}-\d{2}/.test(paid)) {
-      lines.push(`Registry Expiry Date: ${paid}`);
-      foundData = true;
-    }
-  }
-
-  const updatedMatch = textContent.match(/updated:\s*([^\n]+)/i);
-  if (updatedMatch) {
-    const updated = updatedMatch[1].trim();
-    if (updated && /^\d{4}-\d{2}-\d{2}/.test(updated)) {
-      lines.push(`Updated Date: ${updated}`);
-    }
-  }
-
-  // Status
-  const statusMatches = textContent.matchAll(/status:\s*([^\n]+)/gi);
-  for (const match of statusMatches) {
-    const status = match[1].trim();
-    // Пропускаем шаблонные статусы
-    if (status && 
-        status.length > 3 && 
-        !status.includes('Unknown') &&
-        !status.includes('REGISTERED')) {
-      lines.push(`Domain Status: ${status}`);
-      foundData = true;
-    }
-  }
-
-  // Name servers
-  const nserverMatches = textContent.matchAll(/nserver:\s*([^\n]+)/gi);
-  let nsCount = 0;
-  for (const match of nserverMatches) {
-    const ns = match[1].trim();
-    // Проверяем что NS сервер не шаблонный
-    if (ns && ns.includes('.') && !ns.includes('Unknown')) {
-      if (nsCount === 0) {
-        lines.push('');
-        lines.push('Name Servers:');
-      }
-      lines.push(`  ${ns}`);
-      nsCount++;
-      foundData = true;
-    }
-  }
-
-  // Organization
-  const orgMatch = textContent.match(/org:\s*([^\n]+)/i);
-  if (orgMatch) {
-    const org = orgMatch[1].trim();
-    if (org && 
-        org.length > 3 && 
-        !org.includes('Unknown') && 
-        !org.includes('Private Person')) {
-      lines.push('');
-      lines.push(`Registrant Organization: ${org}`);
-    }
-  }
-
-  // Country
-  const countryMatch = textContent.match(/country:\s*([^\n]+)/i);
-  if (countryMatch) {
-    const country = countryMatch[1].trim();
-    if (country && country.length === 2) {
-      lines.push(`Registrant Country: ${country}`);
-    }
-  }
-
-  // Возвращаем данные только если нашли достаточно информации
-  // Минимум: Domain Name + Registrar + 1 NS сервер
-  if (foundData && lines.length >= 8) {
-    return lines;
-  }
-
-  return [];
 }
 
 /**
@@ -737,64 +439,49 @@ export async function nonRecursiveQuery(
     lines.push(`;; Querying authoritative nameservers for ${domain}...`);
     lines.push('');
 
-    const nsResponse = await fetch(`https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(domain)}&type=NS`, {
-      headers: { 'Accept': 'application/dns-json' },
-    });
+    const nsResponse = await queryDnsWithProvider(domain, 'NS', 'cloudflare');
 
-    if (nsResponse.ok) {
-      const nsData = await nsResponse.json();
-      if (nsData.Answer) {
-        lines.push(';; Authoritative NS servers:');
-        nsData.Answer.forEach((a: any) => {
-          lines.push(`;;   ${a.data.replace(/\.$/, '')}`);
-        });
-        lines.push('');
+    if (nsResponse.Answer && nsResponse.Answer.length > 0) {
+      lines.push(';; Authoritative NS servers:');
+      nsResponse.Answer.forEach((a: any) => {
+        lines.push(`;;   ${a.data.replace(/\.$/, '')}`);
+      });
+      lines.push('');
 
-        // Шаг 4: Финальный запрос к авторитативному серверу
+      // Шаг 4: Финальный запрос к авторитативному серверу
+      const finalResponse = await queryDnsWithProvider(domain, type, 'cloudflare');
+
+      if (finalResponse.Answer && finalResponse.Answer.length > 0) {
         lines.push(';; Step 4: Final Query');
-        lines.push(`;; Querying ${nsData.Answer[0]?.data || 'authoritative server'} for ${type} ${domain}...`);
+        lines.push(';; ANSWER SECTION:');
+        finalResponse.Answer.forEach((answer) => {
+          const typeName = getDnsTypeName(answer.type);
+          lines.push(`${answer.name}.\t\t${answer.TTL}\tIN\t${typeName}\t${answer.data}`);
+        });
         lines.push('');
 
-        const finalResponse = await fetch(`https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(domain)}&type=${getDnsTypeNumber(type)}`, {
-          headers: { 'Accept': 'application/dns-json' },
-        });
-
-        if (finalResponse.ok) {
-          const finalData = await finalResponse.json();
-
-          lines.push(';; ANSWER SECTION:');
-          if (finalData.Answer && finalData.Answer.length > 0) {
-            finalData.Answer.forEach((a: any) => {
-              const typeName = getDnsTypeName(a.type);
-              lines.push(`${a.name}.\t\t${a.TTL}\tIN\t${typeName}\t${a.data}`);
-            });
-          } else {
-            lines.push(';; No records found');
-          }
+        if (finalResponse.Authority && finalResponse.Authority.length > 0) {
+          lines.push(';; AUTHORITY SECTION:');
+          finalResponse.Authority.forEach((answer) => {
+            const typeName = getDnsTypeName(answer.type);
+            lines.push(`${answer.name}.\t\t${answer.TTL}\tIN\t${typeName}\t${answer.data}`);
+          });
           lines.push('');
-
-          if (finalData.Authority && finalData.Authority.length > 0) {
-            lines.push(';; AUTHORITY SECTION:');
-            finalData.Authority.forEach((a: any) => {
-              const typeName = getDnsTypeName(a.type);
-              lines.push(`${a.name}.\t\t${a.TTL}\tIN\t${typeName}\t${a.data}`);
-            });
-            lines.push('');
-          }
-
-          if (finalData.Additional && finalData.Additional.length > 0) {
-            lines.push(';; ADDITIONAL SECTION:');
-            finalData.Additional.forEach((a: any) => {
-              const typeName = getDnsTypeName(a.type);
-              lines.push(`${a.name}.\t\t${a.TTL}\tIN\t${typeName}\t${a.data}`);
-            });
-            lines.push('');
-          }
-
-          lines.push(`;; Query time: ${finalData.QueryTime || 0} msec`);
-          lines.push(`;; SERVER: ${nsData.Answer[0]?.data || 'authoritative'}`);
-          lines.push(`;; WHEN: ${now}`);
         }
+
+        if (finalResponse.Additional && finalResponse.Additional.length > 0) {
+          lines.push(';; ADDITIONAL SECTION:');
+          finalResponse.Additional.forEach((answer) => {
+            const typeName = getDnsTypeName(answer.type);
+            lines.push(`${answer.name}.\t\t${answer.TTL}\tIN\t${typeName}\t${answer.data}`);
+          });
+          lines.push('');
+        }
+
+        const authServer = nsResponse.Answer?.[0]?.data.replace(/\.$/, '') || 'ns1.' + domain;
+        lines.push(`;; Query time: ${Math.floor(Math.random() * 100)} msec`);
+        lines.push(`;; SERVER: ${authServer}`);
+        lines.push(`;; WHEN: ${now}`);
       }
     }
   } catch (error) {
@@ -802,116 +489,4 @@ export async function nonRecursiveQuery(
   }
 
   return lines.join('\n');
-}
-
-export interface DnsQueryOptions {
-  trace?: boolean;
-  noRecursive?: boolean;
-}
-
-/**
- * Выполнение DNS-запроса через DoH с опциями
- */
-export async function queryDnsWithProvider(
-  domain: string,
-  type: DnsRecordType,
-  provider: DohProvider = 'cloudflare',
-  options?: DnsQueryOptions
-): Promise<DohResponse> {
-  const endpoint = DOH_ENDPOINTS[provider];
-  const typeNum = getDnsTypeNumber(type);
-  let url = `${endpoint.url}?name=${encodeURIComponent(domain)}&type=${typeNum}`;
-  
-  // Добавляем параметры для опций
-  if (options?.noRecursive) {
-    // Для нерекурсивного запроса
-  }
-  
-  const headers: HeadersInit = {
-    'Accept': 'application/dns-json',
-  };
-  
-  const response = await fetch(url, {
-    method: 'GET',
-    headers,
-  });
-  
-  if (!response.ok) {
-    throw new Error(`${endpoint.name} error: ${response.status} ${response.statusText}`);
-  }
-  
-  return response.json();
-}
-
-/**
- * Выполнение DNS-запроса через Google DoH
- */
-export async function queryDnsGoogle(
-  domain: string,
-  type: DnsRecordType
-): Promise<DohResponse> {
-  const url = `${DOH_ENDPOINTS.google}?name=${encodeURIComponent(domain)}&type=${type}`;
-  
-  const response = await fetch(url, {
-    method: 'GET',
-    headers: {
-      'Accept': 'application/dns-json',
-    },
-  });
-  
-  if (!response.ok) {
-    throw new Error(`Google DoH error: ${response.status} ${response.statusText}`);
-  }
-  
-  return response.json();
-}
-
-/**
- * Выполнение DNS-запроса с автоматическим переключением провайдеров
- */
-export async function queryDns(
-  domain: string,
-  type: DnsRecordType,
-  provider: DohProvider = 'cloudflare',
-  options?: DnsQueryOptions
-): Promise<DohResponse> {
-  return await queryDnsWithProvider(domain, type, provider, options);
-}
-
-/**
- * Получение авторитативных NS серверов для домена
- */
-export async function getAuthoritativeNameservers(domain: string): Promise<string[]> {
-  try {
-    const nsResponse = await queryDnsWithProvider(domain, 'NS', 'cloudflare');
-
-    if (!nsResponse.Answer || nsResponse.Answer.length === 0) {
-      if (nsResponse.Authority && nsResponse.Authority.length > 0) {
-        const nsRecords = nsResponse.Authority.filter(a => a.type === 2);
-        return nsRecords.map(r => r.data.replace(/\.$/, ''));
-      }
-      return [];
-    }
-
-    const nameservers = nsResponse.Answer
-      .filter(a => a.type === 2)
-      .map(a => a.data.replace(/\.$/, ''));
-
-    return nameservers;
-  } catch (error) {
-    console.error('Failed to get authoritative nameservers:', error);
-    return [];
-  }
-}
-
-/**
- * Выполнение DNS-запроса к авторитативному серверу
- */
-export async function queryAuthoritativeDns(
-  domain: string,
-  type: DnsRecordType,
-  _nameserver: string
-): Promise<DohResponse> {
-  // Для авторитативного запроса используем тот же DoH
-  return await queryDnsWithProvider(domain, type, 'cloudflare');
 }
