@@ -199,15 +199,6 @@ google.com.	300	IN	A	142.250.50.46
 
 MIT License — см. файл LICENSE для деталей.
 
-## 👤 Автор
-
-**izelenov7**
-
-- GitHub: [@izelenov7](https://github.com/izelenov7)
-- Telegram: [@igorqx](https://t.me/igorqx)
-- VK: [igorqx](https://vk.com/igorqx)
-- Репозиторий: [github.com/izelenov7/dig-web](https://github.com/izelenov7/dig-web)
-
 ## 📞 Контакты
 
 Для вопросов и предложений:
