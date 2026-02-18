@@ -1,6 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
+/**
+ * Страница документации DNS Check
+ * Содержит подробное руководство по использованию сервиса
+ */
 export const Documentation: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-50">
@@ -8,32 +12,27 @@ export const Documentation: React.FC = () => {
       <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-3">
-              <Link
-                to="/"
-                className="flex items-center gap-3 hover:opacity-80 transition-opacity"
-              >
-                <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-700 rounded-xl flex items-center justify-center shadow-sm">
-                  <svg
-                    className="w-6 h-6 text-white"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"
-                    />
-                  </svg>
-                </div>
-                <div>
-                  <h1 className="text-xl font-bold text-slate-900">DNS Dig</h1>
-                  <p className="text-xs text-slate-500">Документация</p>
-                </div>
-              </Link>
-            </div>
+            <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+              <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-700 rounded-xl flex items-center justify-center shadow-sm">
+                <svg
+                  className="w-6 h-6 text-white"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-slate-900">DNS Check</h1>
+                <p className="text-xs text-slate-500">Документация</p>
+              </div>
+            </Link>
             <Link
               to="/"
               className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors flex items-center gap-2"
@@ -51,7 +50,7 @@ export const Documentation: React.FC = () => {
         {/* Заголовок */}
         <div className="text-center mb-12">
           <h2 className="text-4xl font-bold text-slate-900 mb-4">
-            Документация DNS Dig
+            Документация DNS Check
           </h2>
           <p className="text-lg text-slate-600 max-w-3xl mx-auto">
             Полное руководство по использованию сервиса диагностики DNS-записей
@@ -84,7 +83,7 @@ export const Documentation: React.FC = () => {
             <ol className="list-decimal list-inside space-y-2 text-slate-700">
               <li>Введите домен: <code className="bg-slate-200 px-2 py-1 rounded">google.com</code></li>
               <li>Выберите тип записи: <code className="bg-slate-200 px-2 py-1 rounded">A</code></li>
-              <li>Нажмите <strong>«Выполнить Dig»</strong></li>
+              <li>Нажмите <strong>«Выполнить запрос»</strong></li>
             </ol>
           </div>
 
@@ -144,14 +143,6 @@ export const Documentation: React.FC = () => {
                 <td className="py-3">8.8.8.8 — публичный DNS</td>
               </tr>
               <tr className="border-b border-slate-100">
-                <td className="py-3 font-mono">Quad9</td>
-                <td className="py-3">9.9.9.9 — с блокировкой угроз</td>
-              </tr>
-              <tr className="border-b border-slate-100">
-                <td className="py-3 font-mono">AdGuard</td>
-                <td className="py-3">94.140.14.14 — с блокировкой рекламы</td>
-              </tr>
-              <tr className="border-b border-slate-100">
                 <td className="py-3 font-mono">OpenDNS</td>
                 <td className="py-3">208.67.222.222 — надёжный DNS от Cisco</td>
               </tr>
@@ -179,14 +170,14 @@ export const Documentation: React.FC = () => {
         <section id="query-options" className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 mb-8">
           <h3 className="text-2xl font-bold text-slate-900 mb-4">Опции запроса</h3>
           <p className="text-slate-600 mb-6">
-            Дополнительные опции для выполнения запроса расположены справа от кнопки «Выполнить DNS Check».
+            Дополнительные опции для выполнения запроса расположены справа от кнопки «Выполнить запрос».
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="border border-slate-200 rounded-lg p-4">
               <h4 className="font-semibold text-slate-900 mb-2">☑ Команда</h4>
               <p className="text-sm text-slate-600">
-                Показывает dig команду, которая выполняется для текущего запроса. 
+                Показывает dig команду, которая выполняется для текущего запроса.
                 Команда отображается в отдельном блоке над результатами.
               </p>
             </div>
@@ -199,81 +190,6 @@ export const Documentation: React.FC = () => {
               </p>
             </div>
           </div>
-
-          <div className="mt-6 bg-slate-50 rounded-lg p-4">
-            <p className="text-sm text-slate-600">
-              <strong>Примечание:</strong> Можно включить несколько опций одновременно. 
-              Результаты каждой опции будут отображены в отдельных вкладках форматов вывода.
-            </p>
-          </div>
-        </section>
-
-        {/* Трассировка */}
-        <section id="trace" className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 mb-8">
-          <h3 className="text-2xl font-bold text-slate-900 mb-4">Трассировка (Trace)</h3>
-          <p className="text-slate-600 mb-6">
-            Показывает полный путь DNS-запроса от корневых серверов до авторитативных серверов домена.
-          </p>
-
-          <div className="bg-slate-50 rounded-lg p-6 mb-6">
-            <h4 className="font-semibold text-slate-900 mb-3">Как работает:</h4>
-            <ol className="list-decimal list-inside space-y-2 text-slate-700">
-              <li>Запрос к корневым серверам (.)</li>
-              <li>Запрос к TLD серверам (.com, .ru)</li>
-              <li>Запрос к авторитативным серверам домена</li>
-              <li>Финальный ответ</li>
-            </ol>
-          </div>
-
-          <div className="bg-slate-900 rounded-lg p-4">
-            <p className="text-green-400 font-mono text-sm whitespace-pre-line">
-{`;; Step 1: Root Servers
-;; Querying root servers for TLD nameservers...
-
-;; Step 2: TLD Servers for .com
-;; Querying .com TLD nameservers...
-
-;; Step 3: Authoritative Nameservers
-;; Querying authoritative nameservers for google.com...
-
-;; ANSWER SECTION:
-google.com.		300	IN	A	142.250.50.46`}
-            </p>
-          </div>
-        </section>
-
-        {/* Whois-запрос */}
-        <section id="whois" className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 mb-8">
-          <h3 className="text-2xl font-bold text-slate-900 mb-4">Whois-запрос</h3>
-          <p className="text-slate-600 mb-6">
-            Получение регистрационной информации о домене.
-          </p>
-
-          <div className="bg-slate-50 rounded-lg p-6 mb-6">
-            <h4 className="font-semibold text-slate-900 mb-3">Возвращаемые данные:</h4>
-            <ul className="list-disc list-inside space-y-1 text-slate-700">
-              <li>Доменное имя</li>
-              <li>Регистратор</li>
-              <li>Дата создания</li>
-              <li>Дата окончания регистрации</li>
-              <li>Статусы домена</li>
-              <li>DNS-серверы</li>
-              <li>Контактная информация (если доступна)</li>
-            </ul>
-          </div>
-
-          <div className="bg-slate-900 rounded-lg p-4">
-            <p className="text-green-400 font-mono text-sm whitespace-pre-line">
-{`Domain Name: GOOGLE.COM
-Registrar: MarkMonitor Inc.
-Creation Date: 1997-09-15
-Registry Expiry Date: 2028-09-14
-Status: clientDeleteProhibited
-Name Servers:
-  NS1.GOOGLE.COM
-  NS2.GOOGLE.COM`}
-            </p>
-          </div>
         </section>
 
         {/* Нерекурсивный запрос */}
@@ -284,11 +200,13 @@ Name Servers:
           </p>
 
           <div className="bg-slate-50 rounded-lg p-6 mb-6">
-            <h4 className="font-semibold text-slate-900 mb-3">Отличие от трассировки:</h4>
-            <p className="text-slate-700">
-              Трассировка показывает путь с рекурсией, а нерекурсивный запрос выполняет 
-              каждый шаг отдельно без кэширования.
-            </p>
+            <h4 className="font-semibold text-slate-900 mb-3">Как работает:</h4>
+            <ol className="list-decimal list-inside space-y-2 text-slate-700">
+              <li>Запрос к корневым серверам</li>
+              <li>Запрос к TLD серверам</li>
+              <li>Запрос к авторитативным серверам домена</li>
+              <li>Финальный запрос к авторитативному серверу</li>
+            </ol>
           </div>
         </section>
 
@@ -296,7 +214,7 @@ Name Servers:
         <section id="output-formats" className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 mb-8">
           <h3 className="text-2xl font-bold text-slate-900 mb-4">Форматы вывода</h3>
           <p className="text-slate-600 mb-6">
-            Сервис поддерживает 5 форматов вывода результатов.
+            Сервис поддерживает 3 формата вывода результатов.
           </p>
 
           <div className="space-y-6">
@@ -326,43 +244,6 @@ google.com.		300	IN	A	142.250.50.46`}
             </div>
 
             <div>
-              <h4 className="font-semibold text-slate-900 mb-2">Trace</h4>
-              <p className="text-slate-600 text-sm mb-2">Трассировка пути от корневых серверов до авторитативных (4 шага)</p>
-              <div className="bg-slate-900 rounded-lg p-4">
-                <p className="text-green-400 font-mono text-sm whitespace-pre-line">
-{`;; Step 1: Root Servers
-.	518400	IN	NS	a.root-servers.net.
-
-;; Step 2: TLD Servers for .com
-com.	172800	IN	NS	a.gtld-servers.net.
-
-;; Step 3: Authoritative Nameservers
-google.com.	172800	IN	NS	ns1.google.com.
-
-;; Step 4: Final Query
-google.com.	300	IN	A	142.250.50.46`}
-                </p>
-              </div>
-            </div>
-
-            <div>
-              <h4 className="font-semibold text-slate-900 mb-2">Whois</h4>
-              <p className="text-slate-600 text-sm mb-2">Регистрационная информация о домене (владелец, даты, статусы)</p>
-              <div className="bg-slate-900 rounded-lg p-4">
-                <p className="text-green-400 font-mono text-sm whitespace-pre-line">
-{`Domain Name: GOOGLE.COM
-Registrar: MarkMonitor Inc.
-Creation Date: 1997-09-15
-Registry Expiry Date: 2028-09-14
-Status: clientDeleteProhibited
-Name Servers:
-  NS1.GOOGLE.COM
-  NS2.GOOGLE.COM`}
-                </p>
-              </div>
-            </div>
-
-            <div>
               <h4 className="font-semibold text-slate-900 mb-2">NoRec</h4>
               <p className="text-slate-600 text-sm mb-2">Нерекурсивный запрос с пошаговым отображением делегирования</p>
               <div className="bg-slate-900 rounded-lg p-4">
@@ -380,7 +261,7 @@ google.com.	300	IN	A	142.250.50.46`}
               <h4 className="font-semibold text-slate-900 mb-2">Копирование и экспорт</h4>
               <ul className="text-slate-600 text-sm space-y-1">
                 <li>• <strong>Копировать все</strong> — копирует все записи из секции Ответы</li>
-                <li>• <strong>Копировать (BIND/Dig/Trace/Whois/NoRec)</strong> — копирует выбранный формат</li>
+                <li>• <strong>Копировать (BIND/Dig/NoRec)</strong> — копирует выбранный формат</li>
                 <li>• <strong>Сохранить в файл</strong> — скачивает файл в формате BIND</li>
               </ul>
             </div>
@@ -404,7 +285,7 @@ google.com.	300	IN	A	142.250.50.46`}
                 <strong>DNS запрос:</strong> <code className="bg-slate-200 px-2 py-1 rounded">xn--e1afmkfd.xn--p1ai</code>
               </li>
               <li>
-                <strong>Whois:</strong> <code className="bg-slate-200 px-2 py-1 rounded">пример.рф</code> (оригинальный вид)
+                <strong>Отображение:</strong> <code className="bg-slate-200 px-2 py-1 rounded">пример.рф</code> (оригинальный вид)
               </li>
             </ul>
           </div>
@@ -438,13 +319,10 @@ google.com.	300	IN	A	142.250.50.46`}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-sm text-slate-500">
-              © 2026 DNS Dig. Инструмент для диагностики DNS-записей
+              © DNS Check. Инструмент для диагностики DNS-записей
             </p>
             <div className="flex items-center gap-6">
-              <Link
-                to="/"
-                className="text-sm text-slate-500 hover:text-slate-700 transition-colors"
-              >
+              <Link to="/" className="text-sm text-slate-500 hover:text-slate-700 transition-colors">
                 Сервис
               </Link>
               <a
