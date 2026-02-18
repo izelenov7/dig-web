@@ -503,7 +503,7 @@ async function whoisNicRuQuery(domain: string): Promise<string> {
     if (response.ok) {
       const html = await response.text();
       const parsed = parseNicRuWhois(html, domain);
-      if (parsed && parsed.length > 5) {
+      if (parsed && parsed.length > 8) {
         return parsed.join('\n');
       }
     }
@@ -511,13 +511,23 @@ async function whoisNicRuQuery(domain: string): Promise<string> {
     console.error('NIC.RU whois error:', error);
   }
 
-  // Fallback - генерируем ответ на основе DNS данных
-  return generateFallbackWhois(domain);
+  // Если не удалось получить данные - сообщаем об этом
+  lines.push('Whois data not available for this domain.');
+  lines.push('');
+  lines.push('Possible reasons:');
+  lines.push('- Domain does not exist');
+  lines.push('- Whois information is private/protected');
+  lines.push('- Registrar does not provide public whois data');
+  lines.push('');
+  lines.push('Try checking the domain registration through your registrar directly.');
+  
+  return lines.join('\n');
 }
 
 /**
  * Парсинг ответа от nic.ru
  * Извлекает whois данные из HTML страницы
+ * Возвращает пустой массив если данные не найдены или невалидны
  */
 function parseNicRuWhois(html: string, _domain: string): string[] {
   const lines: string[] = [];
@@ -536,9 +546,13 @@ function parseNicRuWhois(html: string, _domain: string): string[] {
   for (const pattern of domainPatterns) {
     const match = textContent.match(pattern);
     if (match) {
-      lines.push(`Domain Name: ${match[1].trim().toUpperCase()}`);
-      foundData = true;
-      break;
+      const domainName = match[1].trim().toUpperCase();
+      // Проверяем что домен не шаблонный
+      if (domainName && domainName.length > 3) {
+        lines.push(`Domain Name: ${domainName}`);
+        foundData = true;
+        break;
+      }
     }
   }
 
@@ -552,8 +566,12 @@ function parseNicRuWhois(html: string, _domain: string): string[] {
     const match = textContent.match(pattern);
     if (match) {
       const registrar = match[1].trim();
-      // Пропускаем шаблонные значения
-      if (registrar && !registrar.includes('Example Registrar') && !registrar.includes('Unknown')) {
+      // Пропускаем шаблонные и пустые значения
+      if (registrar && 
+          registrar.length > 3 && 
+          !registrar.includes('Example Registrar') && 
+          !registrar.includes('Unknown') &&
+          !registrar.includes('REGRU-RU')) {
         lines.push(`Registrar: ${registrar}`);
         foundData = true;
         break;
@@ -564,19 +582,30 @@ function parseNicRuWhois(html: string, _domain: string): string[] {
   // Dates
   const createdMatch = textContent.match(/created:\s*([^\n]+)/i);
   if (createdMatch) {
-    lines.push(`Creation Date: ${createdMatch[1].trim()}`);
-    foundData = true;
+    const created = createdMatch[1].trim();
+    // Проверяем что дата не шаблонная
+    if (created && /^\d{4}-\d{2}-\d{2}/.test(created)) {
+      lines.push(`Creation Date: ${created}`);
+      foundData = true;
+    }
   }
 
   const paidMatch = textContent.match(/paid-till:\s*([^\n]+)/i);
   if (paidMatch) {
-    lines.push(`Registry Expiry Date: ${paidMatch[1].trim()}`);
-    foundData = true;
+    const paid = paidMatch[1].trim();
+    // Проверяем что дата не шаблонная
+    if (paid && /^\d{4}-\d{2}-\d{2}/.test(paid)) {
+      lines.push(`Registry Expiry Date: ${paid}`);
+      foundData = true;
+    }
   }
 
   const updatedMatch = textContent.match(/updated:\s*([^\n]+)/i);
   if (updatedMatch) {
-    lines.push(`Updated Date: ${updatedMatch[1].trim()}`);
+    const updated = updatedMatch[1].trim();
+    if (updated && /^\d{4}-\d{2}-\d{2}/.test(updated)) {
+      lines.push(`Updated Date: ${updated}`);
+    }
   }
 
   // Status
@@ -584,7 +613,10 @@ function parseNicRuWhois(html: string, _domain: string): string[] {
   for (const match of statusMatches) {
     const status = match[1].trim();
     // Пропускаем шаблонные статусы
-    if (status && !status.includes('Unknown')) {
+    if (status && 
+        status.length > 3 && 
+        !status.includes('Unknown') &&
+        !status.includes('REGISTERED')) {
       lines.push(`Domain Status: ${status}`);
       foundData = true;
     }
@@ -595,7 +627,8 @@ function parseNicRuWhois(html: string, _domain: string): string[] {
   let nsCount = 0;
   for (const match of nserverMatches) {
     const ns = match[1].trim();
-    if (ns && !ns.includes('Unknown')) {
+    // Проверяем что NS сервер не шаблонный
+    if (ns && ns.includes('.') && !ns.includes('Unknown')) {
       if (nsCount === 0) {
         lines.push('');
         lines.push('Name Servers:');
@@ -610,7 +643,10 @@ function parseNicRuWhois(html: string, _domain: string): string[] {
   const orgMatch = textContent.match(/org:\s*([^\n]+)/i);
   if (orgMatch) {
     const org = orgMatch[1].trim();
-    if (org && !org.includes('Unknown') && !org.includes('Private Person')) {
+    if (org && 
+        org.length > 3 && 
+        !org.includes('Unknown') && 
+        !org.includes('Private Person')) {
       lines.push('');
       lines.push(`Registrant Organization: ${org}`);
     }
@@ -619,53 +655,19 @@ function parseNicRuWhois(html: string, _domain: string): string[] {
   // Country
   const countryMatch = textContent.match(/country:\s*([^\n]+)/i);
   if (countryMatch) {
-    lines.push(`Registrant Country: ${countryMatch[1].trim()}`);
+    const country = countryMatch[1].trim();
+    if (country && country.length === 2) {
+      lines.push(`Registrant Country: ${country}`);
+    }
   }
 
-  // Если нашли достаточно данных, возвращаем
-  if (foundData && lines.length >= 5) {
+  // Возвращаем данные только если нашли достаточно информации
+  // Минимум: Domain Name + Registrar + 1 NS сервер
+  if (foundData && lines.length >= 8) {
     return lines;
   }
 
   return [];
-}
-
-/**
- * Fallback whois ответ с реальными данными из DNS
- */
-async function generateFallbackWhois(domain: string): Promise<string> {
-  const lines: string[] = [];
-  const now = new Date();
-  const createdDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
-  const expiryDate = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
-
-  // Получаем NS записи
-  let nsServers: string[] = [];
-  try {
-    const nsResponse = await fetch(`https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(domain)}&type=NS`, {
-      headers: { 'Accept': 'application/dns-json' },
-    });
-    const nsData = await nsResponse.json();
-    if (nsData.Answer) {
-      nsServers = nsData.Answer.map((a: any) => a.data.replace(/\.$/, ''));
-    }
-  } catch (e) {
-    nsServers = [`ns1.${domain}`, `ns2.${domain}`];
-  }
-
-  lines.push(`Domain Name: ${domain.toUpperCase()}`);
-  lines.push(`Creation Date: ${createdDate.toISOString().split('T')[0]}`);
-  lines.push(`Registry Expiry Date: ${expiryDate.toISOString().split('T')[0]}`);
-  lines.push(`Updated Date: ${now.toISOString().split('T')[0]}`);
-  lines.push('Domain Status: clientTransferProhibited');
-  lines.push('Registrar: REGRU-RU');
-  lines.push('');
-  lines.push('Name Servers:');
-  nsServers.forEach(ns => lines.push(`  ${ns}`));
-  lines.push('');
-  lines.push('DNSSEC: unsigned');
-
-  return lines.join('\n');
 }
 
 /**
