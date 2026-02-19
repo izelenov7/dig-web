@@ -2,7 +2,6 @@ import React, { useState, useCallback } from 'react';
 import { Card, Badge, Button } from '../ui';
 import { useDnsStore } from '../../store';
 import { getDnsTypeName } from '../../lib/dnsService';
-import { IpOwnerInfo } from './IpOwnerInfo';
 
 interface ResultsPanelProps {
   hasSearched?: boolean;
@@ -17,7 +16,6 @@ export const ResultsPanel: React.FC<ResultsPanelProps> = ({
   const clearResult = useDnsStore((state) => state.clearResult);
   const options = useDnsStore((state) => state.options);
   const stats = useDnsStore((state) => state.result?.stats);
-  const isLoadingIpOwnerInfo = useDnsStore((state) => state.isLoadingIpOwnerInfo);
 
   const [copied, setCopied] = useState(false);
   const [copyFormat, setCopyFormat] = useState<'bind' | 'dig' | 'noRecursive'>('bind');
@@ -521,22 +519,6 @@ export const ResultsPanel: React.FC<ResultsPanelProps> = ({
                 </div>
               </div>
             </Card>
-          )}
-
-          {/* Информация о владельце IP-адреса */}
-          {isLoadingIpOwnerInfo && (
-            <Card>
-              <div className="flex items-center gap-2 mb-3">
-                <svg className="w-5 h-5 text-slate-600 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-                <span className="text-sm font-semibold text-slate-700">Загрузка информации о владельце IP...</span>
-              </div>
-            </Card>
-          )}
-          
-          {result.ipOwnerInfo && !isLoadingIpOwnerInfo && (
-            <IpOwnerInfo ipOwnerInfo={result.ipOwnerInfo} />
           )}
         </>
       </div>

@@ -19,7 +19,6 @@ import { create } from 'zustand';
 import type { DnsRecordType, DnsQueryOptions, NameserverConfig } from '../types';
 import { DEFAULT_QUERY_OPTIONS } from '../types';
 import type { DohResponse } from '../lib/dnsService';
-import type { IpWhoisResult } from '../lib/ipWhoisService';
 
 /**
  * Статус выполнения запроса
@@ -70,7 +69,6 @@ export interface QueryResult {
     authoritativeNameservers?: string[];
     tldNameservers?: Array<{ name: string; ipv4?: string; ipv6?: string }>;
   };
-  ipOwnerInfo?: IpWhoisResult;
   rawOutput: string;
   bindOutput: string;
   digFullOutput: string;
@@ -107,15 +105,12 @@ interface QueryResultState {
   status: QueryStatus;
   result: QueryResult | null;
   error: string | null;
-  isLoadingIpOwnerInfo: boolean;
 
   // Действия результатов
   setLoading: () => void;
   setSuccess: (result: QueryResult) => void;
   setError: (error: string) => void;
   clearResult: () => void;
-  setIpOwnerInfoLoading: (loading: boolean) => void;
-  setIpOwnerInfo: (ipOwnerInfo: IpWhoisResult) => void;
 }
 
 /**
@@ -173,7 +168,6 @@ export const useDnsStore = create<AppState>((set) => ({
   status: 'idle',
   result: null,
   error: null,
-  isLoadingIpOwnerInfo: false,
 
   setLoading: () => set({ status: 'loading', error: null }),
 
@@ -181,28 +175,19 @@ export const useDnsStore = create<AppState>((set) => ({
     status: 'success',
     result,
     error: null,
-    isLoadingIpOwnerInfo: false,
   }),
 
   setError: (error) => set({
     status: 'error',
     error,
     result: null,
-    isLoadingIpOwnerInfo: false,
   }),
 
   clearResult: () => set({
     status: 'idle',
     result: null,
     error: null,
-    isLoadingIpOwnerInfo: false,
   }),
-
-  setIpOwnerInfoLoading: (loading) => set({ isLoadingIpOwnerInfo: loading }),
-
-  setIpOwnerInfo: (ipOwnerInfo) => set((state) => ({
-    result: state.result ? { ...state.result, ipOwnerInfo } : null,
-  })),
   
   // === История ===
   history: [],

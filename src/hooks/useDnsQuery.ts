@@ -28,7 +28,7 @@ import {
   type DohResponse,
   getAuthoritativeNameservers,
 } from '../lib/dnsService';
-import { isValidDomain, normalizeInput, getTop3TldNameservers, toPunycode, getIpOwnerInfo } from '../lib';
+import { isValidDomain, normalizeInput, getTop3TldNameservers, toPunycode } from '../lib';
 
 export interface DnsQueryParams {
   domain: string;
@@ -48,8 +48,6 @@ export function useDnsQuery() {
     setSuccess,
     setError,
     setDomain,
-    setIpOwnerInfoLoading,
-    setIpOwnerInfo,
   } = useDnsStore();
 
   /**
@@ -196,63 +194,11 @@ export function useDnsQuery() {
 
       // Устанавливаем результат
       setSuccess(result);
-
-      // Асинхронная загрузка информации о владельце IP
-      // Выполняется после установки основного результата
-      const loadIpOwnerInfo = async () => {
-        console.log('[useDnsQuery] Starting async IP owner info lookup...');
-        setIpOwnerInfoLoading(true);
-
-        try {
-          // Получаем IP-адрес из A-записи для определения владельца
-          let aRecords = (response.Answer || []).filter(a => a.type === 1); // type 1 = A record
-
-          console.log('[useDnsQuery] Initial A records from response:', aRecords);
-          console.log('[useDnsQuery] Query type:', queryType);
-
-          if (aRecords.length === 0 && queryType !== 'A') {
-            // Если в ответе нет A-записей и это не A-запрос, получаем A-запись отдельно
-            console.log('[useDnsQuery] No A records in response, fetching A record separately...');
-            try {
-              const aResponse = await queryDns(punycodeDomain, 'A', dohProvider, {});
-              aRecords = (aResponse.Answer || []).filter(a => a.type === 1);
-              console.log('[useDnsQuery] A records from separate query:', aRecords);
-            } catch (e) {
-              console.warn('Failed to get A record for IP owner lookup:', e);
-            }
-          }
-
-          if (aRecords && aRecords.length > 0) {
-            const firstIp = aRecords[0].data;
-            console.log('[useDnsQuery] Got A record IP:', firstIp);
-            if (firstIp) {
-              console.log('[useDnsQuery] Fetching WHOIS info for IP:', firstIp);
-              const whoisResult = await getIpOwnerInfo(firstIp);
-              console.log('[useDnsQuery] WHOIS result:', whoisResult);
-              if (whoisResult) {
-                setIpOwnerInfo(whoisResult);
-                console.log('[useDnsQuery] IP owner info set:', whoisResult);
-              } else {
-                console.log('[useDnsQuery] No WHOIS info found for IP:', firstIp);
-              }
-            }
-          } else {
-            console.log('[useDnsQuery] No A records found, skipping IP owner lookup');
-          }
-        } catch (error) {
-          console.error('[useDnsQuery] Error loading IP owner info:', error);
-        } finally {
-          setIpOwnerInfoLoading(false);
-        }
-      };
-
-      // Запускаем асинхронную загрузку IP owner info
-      loadIpOwnerInfo();
     } catch (error) {
       console.error('DNS query error:', error);
       setError(
-        error instanceof Error 
-          ? `Ошибка запроса: ${error.message}` 
+        error instanceof Error
+          ? `Ошибка запроса: ${error.message}`
           : 'Неизвестная ошибка при выполнении запроса'
       );
     }
