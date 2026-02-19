@@ -207,7 +207,6 @@ google.com.	300	IN	A	142.250.50.46
 4. Push в branch (`git push origin feature/amazing-feature`)
 5. Откройте Pull Request
 
-
 ## 📞 Контакты
 
 Для вопросов и предложений:
