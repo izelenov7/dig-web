@@ -20,10 +20,9 @@ export interface IpWhoisResult {
 const RIPE_WHOIS_API = 'https://stat.ripe.net/data/';
 
 /**
- * Альтернативный API для получения информации об IP (ip-api.com - бесплатный для некоммерческого использования)
- * Используем HTTPS версию для работы на GitHub Pages
+ * Альтернативный API для получения информации об IP (ipapi.co - бесплатный с HTTPS и CORS)
  */
-const IPAPI_ENDPOINT = 'https://ip-api.com/json';
+const IPAPI_ENDPOINT = 'https://ipapi.co';
 
 /**
  * Получение информации о владельце IP-адреса через RIPE API
@@ -150,37 +149,37 @@ export async function getIpWhoisInfo(ip: string): Promise<IpWhoisResult | null> 
 }
 
 /**
- * Получение информации о владельце IP через ip-api.com API (альтернативный метод)
- * Бесплатный API для некоммерческого использования
+ * Получение информации о владельце IP через ipapi.co API (альтернативный метод)
+ * Бесплатный API с поддержкой HTTPS и CORS
  */
 async function getIpInfoFromIpApi(ip: string): Promise<IpWhoisResult | null> {
   try {
-    console.log('[ipWhoisService] Fetching from ip-api.com for IP:', ip);
-    const response = await fetch(`${IPAPI_ENDPOINT}/${ip}`);
-    
+    console.log('[ipWhoisService] Fetching from ipapi.co for IP:', ip);
+    const response = await fetch(`${IPAPI_ENDPOINT}/${ip}/json/`);
+
     if (!response.ok) {
-      console.warn(`[ipWhoisService] ip-api.com API error: ${response.status}`);
+      console.warn(`[ipWhoisService] ipapi.co API error: ${response.status}`);
       return null;
     }
 
     const data = await response.json();
-    console.log('[ipWhoisService] ip-api.com response:', data);
+    console.log('[ipWhoisService] ipapi.co response:', data);
 
-    if (data && data.status === 'success' && data.isp) {
+    if (data && data.ip) {
       const result: IpWhoisResult = {
-        ip: data.query || ip,
-        organization: data.org || data.isp || 'Неизвестно',
-        asn: data.as ? `AS${data.as}` : undefined,
-        country: data.countryCode || undefined,
+        ip: data.ip || ip,
+        organization: data.org || data.company_name || data.isp || 'Неизвестно',
+        asn: data.asn ? `AS${data.asn}` : undefined,
+        country: data.country_code || undefined,
       };
-      console.log('[ipWhoisService] ip-api.com result:', result);
+      console.log('[ipWhoisService] ipapi.co result:', result);
       return result;
     }
 
-    console.log('[ipWhoisService] No valid data from ip-api.com');
+    console.log('[ipWhoisService] No valid data from ipapi.co');
     return null;
   } catch (error) {
-    console.error('[ipWhoisService] Failed to get IP info from ip-api.com:', error);
+    console.error('[ipWhoisService] Failed to get IP info from ipapi.co:', error);
     return null;
   }
 }
