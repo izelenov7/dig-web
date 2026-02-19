@@ -28,7 +28,7 @@ import {
   type DohResponse,
   getAuthoritativeNameservers,
 } from '../lib/dnsService';
-import { isValidDomain, normalizeInput, getTop3TldNameservers, toPunycode } from '../lib';
+import { isValidDomain, normalizeInput, getTop3TldNameservers, toPunycode, getIpOwnerInfo } from '../lib';
 
 export interface DnsQueryParams {
   domain: string;
@@ -39,15 +39,17 @@ export interface DnsQueryParams {
  * Хук для выполнения DNS-запросов
  */
 export function useDnsQuery() {
-  const { 
-    domain, 
+  const {
+    domain,
     recordType,
     nameserverConfig,
     options,
-    setLoading, 
-    setSuccess, 
+    setLoading,
+    setSuccess,
     setError,
     setDomain,
+    setIpOwnerInfoLoading,
+    setIpOwnerInfo,
   } = useDnsStore();
 
   /**
@@ -139,18 +141,18 @@ export function useDnsQuery() {
         setError(`Домен "${normalizedDomain}" не найден (NXDOMAIN)`);
         return;
       }
-      
+
       if (response.Status === 5) { // REFUSED
         setError(`Запрос отклонён сервером (REFUSED)`);
         return;
       }
-      
+
       if (response.Status === 2) { // SERVFAIL
         setError(`Ошибка сервера (SERVFAIL)`);
         return;
       }
 
-      // Формирование результата
+      // Формирование результата (без ipOwnerInfo - она будет загружена асинхронно)
       const result = {
         query: {
           domain: normalizedDomain,
@@ -176,6 +178,7 @@ export function useDnsQuery() {
           authoritativeNameservers,
           tldNameservers,
         },
+        ipOwnerInfo: undefined, // Будет загружено асинхронно
         rawOutput: formatDohResponse(response, queryType),
         bindOutput: formatRecordsBindStyle(
           response.Answer || [],
@@ -191,7 +194,60 @@ export function useDnsQuery() {
         fullResponse: response,
       };
 
+      // Устанавливаем результат
       setSuccess(result);
+
+      // Асинхронная загрузка информации о владельце IP
+      // Выполняется после установки основного результата
+      const loadIpOwnerInfo = async () => {
+        console.log('[useDnsQuery] Starting async IP owner info lookup...');
+        setIpOwnerInfoLoading(true);
+
+        try {
+          // Получаем IP-адрес из A-записи для определения владельца
+          let aRecords = (response.Answer || []).filter(a => a.type === 1); // type 1 = A record
+
+          console.log('[useDnsQuery] Initial A records from response:', aRecords);
+          console.log('[useDnsQuery] Query type:', queryType);
+
+          if (aRecords.length === 0 && queryType !== 'A') {
+            // Если в ответе нет A-записей и это не A-запрос, получаем A-запись отдельно
+            console.log('[useDnsQuery] No A records in response, fetching A record separately...');
+            try {
+              const aResponse = await queryDns(punycodeDomain, 'A', dohProvider, {});
+              aRecords = (aResponse.Answer || []).filter(a => a.type === 1);
+              console.log('[useDnsQuery] A records from separate query:', aRecords);
+            } catch (e) {
+              console.warn('Failed to get A record for IP owner lookup:', e);
+            }
+          }
+
+          if (aRecords && aRecords.length > 0) {
+            const firstIp = aRecords[0].data;
+            console.log('[useDnsQuery] Got A record IP:', firstIp);
+            if (firstIp) {
+              console.log('[useDnsQuery] Fetching WHOIS info for IP:', firstIp);
+              const whoisResult = await getIpOwnerInfo(firstIp);
+              console.log('[useDnsQuery] WHOIS result:', whoisResult);
+              if (whoisResult) {
+                setIpOwnerInfo(whoisResult);
+                console.log('[useDnsQuery] IP owner info set:', whoisResult);
+              } else {
+                console.log('[useDnsQuery] No WHOIS info found for IP:', firstIp);
+              }
+            }
+          } else {
+            console.log('[useDnsQuery] No A records found, skipping IP owner lookup');
+          }
+        } catch (error) {
+          console.error('[useDnsQuery] Error loading IP owner info:', error);
+        } finally {
+          setIpOwnerInfoLoading(false);
+        }
+      };
+
+      // Запускаем асинхронную загрузку IP owner info
+      loadIpOwnerInfo();
     } catch (error) {
       console.error('DNS query error:', error);
       setError(

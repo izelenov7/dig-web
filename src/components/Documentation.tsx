@@ -67,6 +67,7 @@ export const Documentation: React.FC = () => {
             <li><a href="#query-options" className="text-primary-600 hover:text-primary-700 hover:underline">Опции запроса</a></li>
             <li><a href="#no-recursive" className="text-primary-600 hover:text-primary-700 hover:underline">Нерекурсивный запрос</a></li>
             <li><a href="#output-formats" className="text-primary-600 hover:text-primary-700 hover:underline">Форматы вывода</a></li>
+            <li><a href="#ip-owner" className="text-primary-600 hover:text-primary-700 hover:underline">Информация о владельце IP</a></li>
             <li><a href="#idn" className="text-primary-600 hover:text-primary-700 hover:underline">Поддержка IDN (.рф)</a></li>
           </ul>
         </div>
@@ -265,6 +266,44 @@ google.com.	300	IN	A	142.250.50.46`}
                 <li>• <strong>Сохранить в файл</strong> — скачивает файл в формате BIND</li>
               </ul>
             </div>
+          </div>
+        </section>
+
+        {/* Информация о владельце IP */}
+        <section id="ip-owner" className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 mb-8">
+          <h3 className="text-2xl font-bold text-slate-900 mb-4">Информация о владельце IP-адреса</h3>
+          <p className="text-slate-600 mb-6">
+            Сервис автоматически определяет владельца IP-адреса, на который направлен домен.
+            После выполнения DNS-запроса для записей типа <strong>A</strong> (или если домен имеет A-записи),
+            внизу страницы результатов отображается дополнительный блок с информацией о владельце IP.
+          </p>
+
+          <div className="bg-slate-50 rounded-lg p-6 mb-6">
+            <h4 className="font-semibold text-slate-900 mb-3">Что отображается:</h4>
+            <ul className="space-y-2 text-slate-700">
+              <li>• <strong>IP-адрес</strong> — адрес, на который направлен домен</li>
+              <li>• <strong>Владелец</strong> — название организации или провайдера</li>
+              <li>• <strong>ASN</strong> — номер автономной системы (например, AS15169)</li>
+              <li>• <strong>Страна</strong> — код страны (например, US, DE, RU)</li>
+            </ul>
+          </div>
+
+          <div className="bg-slate-50 rounded-lg p-6 mb-6">
+            <h4 className="font-semibold text-slate-900 mb-3">Как это работает:</h4>
+            <ol className="list-decimal list-inside space-y-2 text-slate-700">
+              <li>После выполнения DNS-запроса сервис получает A-запись домена</li>
+              <li>Если запрошен другой тип записи (MX, NS и т.д.), сервис дополнительно запрашивает A-запись</li>
+              <li>IP-адрес из A-записи используется для получения информации о владельце</li>
+              <li>Данные загружаются асинхронно из публичных WHOIS API (RIPE, ip-api.com)</li>
+            </ol>
+          </div>
+
+          <div className="border border-blue-200 bg-blue-50 rounded-lg p-4">
+            <h4 className="font-semibold text-blue-900 mb-2">💡 Примечание</h4>
+            <p className="text-sm text-blue-800">
+              Информация о владельце IP загружается асинхронно после отображения основных результатов DNS-запроса.
+              Во время загрузки отображается индикатор «Загрузка информации о владельце IP...».
+            </p>
           </div>
         </section>
 

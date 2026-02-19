@@ -1,0 +1,208 @@
+/**
+ * Сервис для определения владельца IP-адреса (IP WHOIS)
+ * Использует публичные API для получения информации об организации,
+ * которой принадлежит IP-адрес
+ */
+
+/**
+ * Результат WHOIS lookup для IP-адреса
+ */
+export interface IpWhoisResult {
+  ip: string;
+  organization: string;
+  asn?: string;
+  country?: string;
+}
+
+/**
+ * RIPE WHOIS API для получения информации об IP в европейском регионе
+ */
+const RIPE_WHOIS_API = 'https://stat.ripe.net/data';
+
+/**
+ * Альтернативный API для получения информации об IP (ip-api.com - бесплатный для некоммерческого использования)
+ */
+const IPAPI_ENDPOINT = 'http://ip-api.com/json';
+
+/**
+ * Получение информации о владельце IP-адреса через RIPE API
+ */
+export async function getIpWhoisInfo(ip: string): Promise<IpWhoisResult | null> {
+  try {
+    console.log('[ipWhoisService] Fetching RIPE WHOIS for IP:', ip);
+    // Получаем информацию из RIPE API
+    const response = await fetch(`${RIPE_WHOIS_API}/addr-lookup.json?resource=${ip}`);
+
+    if (!response.ok) {
+      console.warn(`[ipWhoisService] RIPE WHOIS API error: ${response.status}`);
+      return null;
+    }
+
+    const data = await response.json();
+    console.log('[ipWhoisService] RIPE addr-lookup response:', data);
+
+    // Ищем запись с типом "inetnum" или "inet6num" - там информация о владельце
+    const inetnumData = data.data?.resources?.find((r: any) =>
+      r.type === 'inetnum' || r.type === 'inet6num'
+    );
+    console.log('[ipWhoisService] inetnumData:', inetnumData);
+
+    if (inetnumData) {
+      // Получаем детальную информацию
+      const detailResponse = await fetch(`${RIPE_WHOIS_API}/object.json?identifier=${inetnumData.key}`);
+      if (detailResponse.ok) {
+        const detailData = await detailResponse.json();
+        console.log('[ipWhoisService] RIPE object detail:', detailData);
+        const object = detailData.data?.record;
+
+        // Ищем поле descr - это реальный владелец
+        let organization = 'Неизвестно';
+        let netname = '';
+        let objects: any[] = [];
+
+        if (object?.['section']) {
+          const section = Array.isArray(object['section']) ? object['section'][0] : object['section'];
+          objects = section?.['objects'] || [];
+          console.log('[ipWhoisService] Objects from section:', objects);
+
+          for (const obj of objects) {
+            if (obj['name'] === 'descr' && obj['value']) {
+              const descrValue = Array.isArray(obj['value']) ? obj['value'][0] : obj['value'];
+              if (typeof descrValue === 'string') {
+                organization = descrValue;
+                break;
+              }
+            }
+            if (obj['name'] === 'netname' && obj['value']) {
+              const netnameValue = Array.isArray(obj['value']) ? obj['value'][0] : obj['value'];
+              if (typeof netnameValue === 'string') {
+                netname = netnameValue;
+              }
+            }
+          }
+        }
+
+        // Если не нашли descr, используем netname
+        if (organization === 'Неизвестно' && netname) {
+          organization = netname;
+        }
+
+        // Получаем ASN
+        let asn: string | undefined;
+        const originObj = objects.find((o: any) => o['name'] === 'origin');
+        if (originObj) {
+          const originValue = Array.isArray(originObj['value']) ? originObj['value'][0] : originObj['value'];
+          if (typeof originValue === 'string') {
+            asn = originValue.startsWith('AS') ? originValue : `AS${originValue}`;
+          }
+        }
+
+        // Получаем страну
+        let country: string | undefined;
+        const countryObj = objects.find((o: any) => o['name'] === 'country');
+        if (countryObj) {
+          const countryValue = Array.isArray(countryObj['value']) ? countryObj['value'][0] : countryObj['value'];
+          if (typeof countryValue === 'string') {
+            country = countryValue.toUpperCase();
+          }
+        }
+
+        const result = {
+          ip: ip,
+          organization,
+          asn,
+          country,
+        };
+        console.log('[ipWhoisService] Final RIPE result:', result);
+        return result;
+      }
+    }
+
+    console.log('[ipWhoisService] No inetnum data found in RIPE response');
+    return null;
+  } catch (error) {
+    console.error('[ipWhoisService] Failed to get IP WHOIS info from RIPE:', error);
+    return null;
+  }
+}
+
+/**
+ * Получение информации о владельце IP через ip-api.com API (альтернативный метод)
+ * Бесплатный API для некоммерческого использования
+ */
+async function getIpInfoFromIpApi(ip: string): Promise<IpWhoisResult | null> {
+  try {
+    console.log('[ipWhoisService] Fetching from ip-api.com for IP:', ip);
+    const response = await fetch(`${IPAPI_ENDPOINT}/${ip}`);
+    
+    if (!response.ok) {
+      console.warn(`[ipWhoisService] ip-api.com API error: ${response.status}`);
+      return null;
+    }
+
+    const data = await response.json();
+    console.log('[ipWhoisService] ip-api.com response:', data);
+
+    if (data && data.status === 'success' && data.isp) {
+      const result: IpWhoisResult = {
+        ip: data.query || ip,
+        organization: data.org || data.isp || 'Неизвестно',
+        asn: data.as ? `AS${data.as}` : undefined,
+        country: data.countryCode || undefined,
+      };
+      console.log('[ipWhoisService] ip-api.com result:', result);
+      return result;
+    }
+
+    console.log('[ipWhoisService] No valid data from ip-api.com');
+    return null;
+  } catch (error) {
+    console.error('[ipWhoisService] Failed to get IP info from ip-api.com:', error);
+    return null;
+  }
+}
+
+/**
+ * Получение информации о владельце IP
+ * Пробует сначала RIPE API, затем ipapi.com
+ */
+export async function getIpOwnerInfo(ip: string): Promise<IpWhoisResult | null> {
+  console.log('[ipWhoisService] getIpOwnerInfo called for IP:', ip);
+  
+  // Сначала пробуем RIPE API
+  const ripeResult = await getIpWhoisInfo(ip);
+  if (ripeResult) {
+    console.log('[ipWhoisService] Got result from RIPE:', ripeResult);
+    return ripeResult;
+  }
+
+  // Если RIPE не вернул результат, пробуем ipapi.com
+  console.log('[ipWhoisService] RIPE returned null, trying ipapi.com...');
+  const ipApiResult = await getIpInfoFromIpApi(ip);
+  if (ipApiResult) {
+    console.log('[ipWhoisService] Got result from ipapi.com:', ipApiResult);
+    return ipApiResult;
+  }
+
+  console.log('[ipWhoisService] All APIs returned null for IP:', ip);
+  return null;
+}
+
+/**
+ * Форматирование информации об организации для отображения
+ */
+export function formatOrganizationName(org: string): string {
+  if (!org || org === 'Неизвестно') {
+    return 'Неизвестно';
+  }
+  
+  // Убираем лишние пробелы
+  let formatted = org.trim();
+  
+  // Если название слишком длинное, сокращаем
+  if (formatted.length > 100) {
+    formatted = formatted.substring(0, 97) + '...';
+  }
+  
+  return formatted;
+}
