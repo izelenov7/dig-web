@@ -20,9 +20,10 @@ export interface IpWhoisResult {
 const RIPE_WHOIS_API = 'https://stat.ripe.net/data/';
 
 /**
- * Альтернативный API для получения информации об IP (ipapi.co - бесплатный с HTTPS и CORS)
+ * Альтернативный API для получения информации об IP (ipwhois.app - бесплатный с HTTPS и CORS)
+ * Лимит: 1000 запросов в месяц на бесплатном тарифе
  */
-const IPAPI_ENDPOINT = 'https://ipapi.co';
+const IPWHOIS_ENDPOINT = 'https://ipwhois.app/json';
 
 /**
  * Получение информации о владельце IP-адреса через RIPE API
@@ -149,37 +150,37 @@ export async function getIpWhoisInfo(ip: string): Promise<IpWhoisResult | null> 
 }
 
 /**
- * Получение информации о владельце IP через ipapi.co API (альтернативный метод)
+ * Получение информации о владельце IP через ipwhois.app API (альтернативный метод)
  * Бесплатный API с поддержкой HTTPS и CORS
  */
 async function getIpInfoFromIpApi(ip: string): Promise<IpWhoisResult | null> {
   try {
-    console.log('[ipWhoisService] Fetching from ipapi.co for IP:', ip);
-    const response = await fetch(`${IPAPI_ENDPOINT}/${ip}/json/`);
+    console.log('[ipWhoisService] Fetching from ipwhois.app for IP:', ip);
+    const response = await fetch(`${IPWHOIS_ENDPOINT}/${ip}`);
 
     if (!response.ok) {
-      console.warn(`[ipWhoisService] ipapi.co API error: ${response.status}`);
+      console.warn(`[ipWhoisService] ipwhois.app API error: ${response.status}`);
       return null;
     }
 
     const data = await response.json();
-    console.log('[ipWhoisService] ipapi.co response:', data);
+    console.log('[ipWhoisService] ipwhois.app response:', data);
 
     if (data && data.ip) {
       const result: IpWhoisResult = {
         ip: data.ip || ip,
-        organization: data.org || data.company_name || data.isp || 'Неизвестно',
-        asn: data.asn ? `AS${data.asn}` : undefined,
+        organization: data.connection?.org || data.connection?.isp || 'Неизвестно',
+        asn: data.connection?.asn ? `AS${data.connection.asn}` : undefined,
         country: data.country_code || undefined,
       };
-      console.log('[ipWhoisService] ipapi.co result:', result);
+      console.log('[ipWhoisService] ipwhois.app result:', result);
       return result;
     }
 
-    console.log('[ipWhoisService] No valid data from ipapi.co');
+    console.log('[ipWhoisService] No valid data from ipwhois.app');
     return null;
   } catch (error) {
-    console.error('[ipWhoisService] Failed to get IP info from ipapi.co:', error);
+    console.error('[ipWhoisService] Failed to get IP info from ipwhois.app:', error);
     return null;
   }
 }
