@@ -17,12 +17,13 @@ export interface IpWhoisResult {
 /**
  * RIPE WHOIS API для получения информации об IP в европейском регионе
  */
-const RIPE_WHOIS_API = 'https://stat.ripe.net/data';
+const RIPE_WHOIS_API = 'https://stat.ripe.net/data/';
 
 /**
  * Альтернативный API для получения информации об IP (ip-api.com - бесплатный для некоммерческого использования)
+ * Используем HTTPS версию для работы на GitHub Pages
  */
-const IPAPI_ENDPOINT = 'http://ip-api.com/json';
+const IPAPI_ENDPOINT = 'https://ip-api.com/json';
 
 /**
  * Получение информации о владельце IP-адреса через RIPE API
@@ -30,8 +31,8 @@ const IPAPI_ENDPOINT = 'http://ip-api.com/json';
 export async function getIpWhoisInfo(ip: string): Promise<IpWhoisResult | null> {
   try {
     console.log('[ipWhoisService] Fetching RIPE WHOIS for IP:', ip);
-    // Получаем информацию из RIPE API
-    const response = await fetch(`${RIPE_WHOIS_API}/addr-lookup.json?resource=${ip}`);
+    // Получаем информацию из RIPE API - используем правильный формат URL
+    const response = await fetch(`${RIPE_WHOIS_API}addr-lookup.json?resource=${ip}`);
 
     if (!response.ok) {
       console.warn(`[ipWhoisService] RIPE WHOIS API error: ${response.status}`);
@@ -41,85 +42,107 @@ export async function getIpWhoisInfo(ip: string): Promise<IpWhoisResult | null> 
     const data = await response.json();
     console.log('[ipWhoisService] RIPE addr-lookup response:', data);
 
+    // Проверяем, есть ли данные в ответе
+    if (!data.data || !data.data.resources || data.data.resources.length === 0) {
+      console.log('[ipWhoisService] No resources found in RIPE response');
+      return null;
+    }
+
     // Ищем запись с типом "inetnum" или "inet6num" - там информация о владельце
-    const inetnumData = data.data?.resources?.find((r: any) =>
+    const inetnumData = data.data.resources.find((r: any) =>
       r.type === 'inetnum' || r.type === 'inet6num'
     );
     console.log('[ipWhoisService] inetnumData:', inetnumData);
 
-    if (inetnumData) {
-      // Получаем детальную информацию
-      const detailResponse = await fetch(`${RIPE_WHOIS_API}/object.json?identifier=${inetnumData.key}`);
-      if (detailResponse.ok) {
-        const detailData = await detailResponse.json();
-        console.log('[ipWhoisService] RIPE object detail:', detailData);
-        const object = detailData.data?.record;
+    if (!inetnumData) {
+      console.log('[ipWhoisService] No inetnum/inet6num data found');
+      return null;
+    }
 
-        // Ищем поле descr - это реальный владелец
-        let organization = 'Неизвестно';
-        let netname = '';
-        let objects: any[] = [];
+    // Получаем детальную информацию по handle
+    const handle = inetnumData.handle || inetnumData.key;
+    if (!handle) {
+      console.log('[ipWhoisService] No handle found for inetnum data');
+      return null;
+    }
 
-        if (object?.['section']) {
-          const section = Array.isArray(object['section']) ? object['section'][0] : object['section'];
-          objects = section?.['objects'] || [];
-          console.log('[ipWhoisService] Objects from section:', objects);
+    const detailResponse = await fetch(`${RIPE_WHOIS_API}object.json?identifier=${handle}`);
+    if (!detailResponse.ok) {
+      console.warn(`[ipWhoisService] RIPE object API error: ${detailResponse.status}`);
+      return null;
+    }
 
-          for (const obj of objects) {
-            if (obj['name'] === 'descr' && obj['value']) {
-              const descrValue = Array.isArray(obj['value']) ? obj['value'][0] : obj['value'];
-              if (typeof descrValue === 'string') {
-                organization = descrValue;
-                break;
-              }
-            }
-            if (obj['name'] === 'netname' && obj['value']) {
-              const netnameValue = Array.isArray(obj['value']) ? obj['value'][0] : obj['value'];
-              if (typeof netnameValue === 'string') {
-                netname = netnameValue;
-              }
-            }
+    const detailData = await detailResponse.json();
+    console.log('[ipWhoisService] RIPE object detail:', detailData);
+
+    const record = detailData.data?.record;
+    if (!record) {
+      console.log('[ipWhoisService] No record in RIPE object response');
+      return null;
+    }
+
+    // Ищем поле descr - это реальный владелец
+    let organization = 'Неизвестно';
+    let netname = '';
+    let objects: any[] = [];
+
+    // Структура RIPE: record -> section -> objects
+    const section = record.section;
+    if (section) {
+      const sectionData = Array.isArray(section) ? section[0] : section;
+      objects = sectionData?.objects || [];
+      console.log('[ipWhoisService] Objects from section:', objects);
+
+      for (const obj of objects) {
+        if (obj.name === 'descr' && obj.value) {
+          const descrValue = Array.isArray(obj.value) ? obj.value[0] : obj.value;
+          if (typeof descrValue === 'string') {
+            organization = descrValue;
+            break;
           }
         }
-
-        // Если не нашли descr, используем netname
-        if (organization === 'Неизвестно' && netname) {
-          organization = netname;
-        }
-
-        // Получаем ASN
-        let asn: string | undefined;
-        const originObj = objects.find((o: any) => o['name'] === 'origin');
-        if (originObj) {
-          const originValue = Array.isArray(originObj['value']) ? originObj['value'][0] : originObj['value'];
-          if (typeof originValue === 'string') {
-            asn = originValue.startsWith('AS') ? originValue : `AS${originValue}`;
+        if (obj.name === 'netname' && obj.value) {
+          const netnameValue = Array.isArray(obj.value) ? obj.value[0] : obj.value;
+          if (typeof netnameValue === 'string') {
+            netname = netnameValue;
           }
         }
-
-        // Получаем страну
-        let country: string | undefined;
-        const countryObj = objects.find((o: any) => o['name'] === 'country');
-        if (countryObj) {
-          const countryValue = Array.isArray(countryObj['value']) ? countryObj['value'][0] : countryObj['value'];
-          if (typeof countryValue === 'string') {
-            country = countryValue.toUpperCase();
-          }
-        }
-
-        const result = {
-          ip: ip,
-          organization,
-          asn,
-          country,
-        };
-        console.log('[ipWhoisService] Final RIPE result:', result);
-        return result;
       }
     }
 
-    console.log('[ipWhoisService] No inetnum data found in RIPE response');
-    return null;
+    // Если не нашли descr, используем netname
+    if (organization === 'Неизвестно' && netname) {
+      organization = netname;
+    }
+
+    // Получаем ASN
+    let asn: string | undefined;
+    const originObj = objects.find((o: any) => o.name === 'origin');
+    if (originObj) {
+      const originValue = Array.isArray(originObj.value) ? originObj.value[0] : originObj.value;
+      if (typeof originValue === 'string') {
+        asn = originValue.startsWith('AS') ? originValue : `AS${originValue}`;
+      }
+    }
+
+    // Получаем страну
+    let country: string | undefined;
+    const countryObj = objects.find((o: any) => o.name === 'country');
+    if (countryObj) {
+      const countryValue = Array.isArray(countryObj.value) ? countryObj.value[0] : countryObj.value;
+      if (typeof countryValue === 'string') {
+        country = countryValue.toUpperCase();
+      }
+    }
+
+    const result = {
+      ip: ip,
+      organization,
+      asn,
+      country,
+    };
+    console.log('[ipWhoisService] Final RIPE result:', result);
+    return result;
   } catch (error) {
     console.error('[ipWhoisService] Failed to get IP WHOIS info from RIPE:', error);
     return null;
